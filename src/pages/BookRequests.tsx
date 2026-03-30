@@ -28,11 +28,14 @@ export default function BookRequests() {
         .from("book_requests")
         .select(`
           *,
-          profiles:user_id (full_name, class_name)
+          profile:profiles(full_name, class_name)
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
       setRequests(data || []);
     } catch (error: any) {
       toast.error("İstekler yüklenirken hata oluştu");

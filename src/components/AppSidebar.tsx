@@ -8,6 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import {
   Users,
@@ -17,13 +18,25 @@ import {
   BookMarked,
   LayoutDashboard,
   ClipboardList,
+  LogOut,
+  User,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "./ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function AppSidebar() {
   const { profile } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const role = profile?.role || "student";
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Başarıyla çıkış yapıldı");
+    navigate("/auth");
+  };
 
   const adminItems = [
     { title: "Giriş", url: "/dashboard", icon: LayoutDashboard },
@@ -89,6 +102,28 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t border-sidebar-border/50">
+        <div className="flex items-center justify-between gap-2 bg-muted/30 p-3 rounded-2xl border border-border/50">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold truncate text-foreground">{profile?.full_name}</p>
+              <p className="text-[10px] uppercase tracking-tighter text-muted-foreground font-bold">{role === 'admin' ? 'Yönetici' : role === 'teacher' ? 'Öğretmen' : 'Öğrenci'}</p>
+            </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-rose-500 hover:bg-rose-50 transition-colors shrink-0"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }
