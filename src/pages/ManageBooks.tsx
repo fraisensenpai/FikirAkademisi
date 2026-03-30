@@ -127,20 +127,20 @@ export default function ManageBooks() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {books.map((book) => (
-          <div key={book.id} className="glass-card p-5 space-y-3">
+          <div key={book.id} className="glass-card p-4 md:p-5 space-y-3 hover:border-primary/20 transition-all">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 md:gap-3">
                 <div className="p-2 rounded-lg bg-primary/10">
-                  <BookOpen className="w-5 h-5 text-primary" />
+                  <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground">{book.title}</h4>
-                  <p className="text-sm text-muted-foreground">{book.total_pages} sayfa</p>
+                  <h4 className="font-bold text-sm md:text-base text-foreground line-clamp-1">{book.title}</h4>
+                  <p className="text-xs text-muted-foreground">{book.total_pages} sayfa</p>
                 </div>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => handleDelete(book.id)} className="text-destructive hover:text-destructive">
+              <Button size="icon" variant="ghost" onClick={() => handleDelete(book.id)} className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>

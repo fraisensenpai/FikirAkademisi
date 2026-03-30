@@ -12,7 +12,7 @@ interface BookRequest {
   description: string | null;
   status: string;
   created_at: string;
-  profiles: {
+  profile: {
     full_name: string;
     class_name: string;
   };
@@ -79,57 +79,57 @@ export default function BookRequests() {
           </div>
         ) : (
           requests.map((req) => (
-            <div key={req.id} className="glass-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-primary/30 transition-all">
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500/10 rounded-lg">
-                    <BookMarked className="w-5 h-5 text-emerald-500" />
+            <div key={req.id} className="glass-card p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 hover:border-primary/30 transition-all">
+              <div className="space-y-2 md:space-y-3 flex-1">
+                <div className="flex items-start md:items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg shrink-0">
+                    <BookMarked className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-lg">{req.title}</h4>
-                    {req.author && <p className="text-sm text-muted-foreground">Yazar: {req.author}</p>}
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-base md:text-lg leading-tight truncate">{req.title}</h4>
+                    {req.author && <p className="text-xs md:text-sm text-muted-foreground truncate">Yazar: {req.author}</p>}
                   </div>
-                  <Badge variant={req.status === 'pending' ? 'secondary' : req.status === 'approved' ? 'default' : 'destructive'} className="ml-2">
+                  <Badge variant={req.status === 'pending' ? 'secondary' : req.status === 'approved' ? 'default' : 'destructive'} className="text-[10px] md:text-xs px-1.5 py-0 md:px-2 md:py-0.5">
                     {req.status === 'pending' ? 'Bekliyor' : req.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
                   </Badge>
                 </div>
                 
                 {req.description && (
-                  <p className="text-sm bg-muted/50 p-3 rounded-lg border border-border/50 italic">
+                  <p className="text-xs md:text-sm bg-muted/50 p-2 md:p-3 rounded-lg border border-border/50 italic text-muted-foreground/80">
                     "{req.description}"
                   </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 md:gap-4 text-[10px] md:text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <UserIcon className="w-3.5 h-3.5" />
-                    {req.profiles?.full_name} ({req.profiles?.class_name})
+                    <UserIcon className="w-3 md:w-3.5 h-3 md:h-3.5" />
+                    {req.profile?.full_name} ({req.profile?.class_name})
                   </span>
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
+                    <Calendar className="w-3 md:w-3.5 h-3 md:h-3.5" />
                     {new Date(req.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
 
               {req.status === 'pending' && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mt-2 md:mt-0">
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                    className="flex-1 md:flex-none text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-8 md:h-9 text-xs"
                     onClick={() => updateStatus(req.id, 'approved')}
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                     İşleme Al
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                    className="flex-1 md:flex-none text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-8 md:h-9 text-xs"
                     onClick={() => updateStatus(req.id, 'rejected')}
                   >
-                    <XCircle className="w-4 h-4 mr-2" />
+                    <XCircle className="w-3.5 h-3.5 mr-1.5" />
                     Reddet
                   </Button>
                 </div>
