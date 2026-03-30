@@ -15,6 +15,7 @@ import Assignments from "./pages/Assignments";
 import Analytics from "./pages/Analytics";
 import Books from "./pages/Books";
 import ReadBook from "./pages/ReadBook";
+import BookRequests from "./pages/BookRequests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="books" element={<Books />} />
                 <Route path="read/:bookId" element={<ReadBook />} />
+                <Route path="book-requests" element={<BookRequests />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
