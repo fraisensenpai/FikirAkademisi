@@ -64,6 +64,16 @@ export default function ReadBook() {
     if (bookId && user) fetchBookAndProgress();
   }, [bookId, user]);
 
+  const [pageWidth, setPageWidth] = useState(window.innerWidth > 768 ? 800 : window.innerWidth - 32);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setPageWidth(window.innerWidth > 768 ? 800 : window.innerWidth - 32);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
@@ -148,24 +158,25 @@ export default function ReadBook() {
       </header>
 
       {/* Modern Reader Body */}
-      <main className="flex-1 flex flex-col items-center pt-20 pb-32 px-4 no-select">
-        <div className="w-full max-w-7xl flex justify-center bg-white shadow-[0_0_60px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden touch-none">
+      <main className="flex-1 flex flex-col items-center pt-20 pb-32 px-1 md:px-4 no-select relative overflow-x-hidden">
+        <div className="w-full max-w-full md:max-w-4xl flex justify-center bg-white shadow-[0_0_60px_rgba(0,0,0,0.6)] rounded-sm overflow-hidden touch-none">
           <Document
             file={book.pdf_url}
             onLoadSuccess={onDocumentLoadSuccess}
             loading={
-              <div className="h-[800px] w-full flex items-center justify-center bg-white">
+              <div className="h-[500px] md:h-[800px] w-full flex items-center justify-center bg-white">
                 <Loader2 className="w-12 h-12 animate-spin text-slate-300" />
               </div>
             }
           >
             <Page 
               pageNumber={currentPage} 
-              scale={scale * 1.4} // Varsayılanı daha büyük yaptık
+              width={pageWidth}
+              scale={scale}
               renderTextLayer={false}
               renderAnnotationLayer={false}
               className="max-w-full drop-shadow-2xl"
-              loading={<div className="h-[800px] w-full bg-white" />}
+              loading={<div className="h-[500px] md:h-[800px] w-full bg-white" />}
             />
           </Document>
         </div>
