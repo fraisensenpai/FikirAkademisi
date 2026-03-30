@@ -14,16 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assignments: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          target_class: string
+          teacher_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          target_class: string
+          teacher_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          target_class?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      books: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          pdf_url: string
+          quiz_data: Json | null
+          title: string
+          total_pages: number
+          updated_at: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pdf_url: string
+          quiz_data?: Json | null
+          title: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pdf_url?: string
+          quiz_data?: Json | null
+          title?: string
+          total_pages?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          class_name: string | null
+          created_at: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          school_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_name?: string | null
+          created_at?: string
+          full_name?: string
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          school_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_name?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          school_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_books: {
+        Row: {
+          book_id: string
+          created_at: string
+          current_page: number
+          id: string
+          is_completed: boolean
+          last_read_at: string | null
+          progress_percent: number
+          quiz_score: number | null
+          total_minutes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          current_page?: number
+          id?: string
+          is_completed?: boolean
+          last_read_at?: string | null
+          progress_percent?: number
+          quiz_score?: number | null
+          total_minutes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          current_page?: number
+          id?: string
+          is_completed?: boolean
+          last_read_at?: string | null
+          progress_percent?: number
+          quiz_score?: number | null
+          total_minutes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_books_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "student" | "teacher" | "developer" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +325,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["student", "teacher", "developer", "admin"],
+    },
   },
 } as const
