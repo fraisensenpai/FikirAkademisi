@@ -106,49 +106,43 @@ export default function Books() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {assignedBooks.map((book) => (
             <div key={book.id} className="glass-card overflow-hidden group hover:shadow-xl transition-all duration-300">
-              <div className="p-4 md:p-6 space-y-3 md:space-y-4">
+              <div className="p-3 md:p-6 space-y-2 md:space-y-4">
                 <div className="flex items-start justify-between">
-                  <div className="bg-primary/10 p-2 md:p-3 rounded-xl">
-                    <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  <div className="bg-primary/10 p-1.5 md:p-3 rounded-lg">
+                    <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                   </div>
                   {book.is_completed && (
-                    <div className="flex items-center gap-1 text-[10px] md:text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 md:py-1 rounded-full">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Tamamlandı
+                    <div className="flex items-center gap-1 text-[8px] md:text-xs font-medium text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 md:py-1 rounded-full">
+                      <CheckCircle2 className="w-2.5 h-2.5" />
+                      Tamam
                     </div>
                   )}
                 </div>
                 
-                <div className="min-h-[60px] md:min-h-[80px]">
-                  <h3 className="text-base md:text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">{book.title}</h3>
-                  <div className="flex items-center gap-2 mt-1 text-xs md:text-sm text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{book.total_pages} Sayfa</span>
+                <div className="min-h-[45px] md:min-h-[80px]">
+                  <h3 className="text-xs md:text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">{book.title}</h3>
+                  <div className="flex items-center gap-1.5 mt-1 text-[10px] md:text-sm text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>{book.total_pages} s.</span>
                   </div>
-                  {book.due_date && (
-                    <div className="flex items-center gap-2 mt-1.5 text-[10px] md:text-[11px] font-medium text-rose-500/80 bg-rose-500/5 px-1.5 py-0.5 rounded w-fit">
-                      <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                      Son: {new Date(book.due_date).toLocaleDateString()}
-                    </div>
-                  )}
                 </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <div className="flex justify-between text-[10px] md:text-xs">
+                <div className="space-y-1 md:space-y-2">
+                  <div className="flex justify-between text-[9px] md:text-xs">
                     <span className="text-muted-foreground">İlerleme</span>
                     <span className="font-medium">{Math.round(book.progress_percent)}%</span>
                   </div>
-                  <Progress value={book.progress_percent} className="h-1.5 md:h-2" />
+                  <Progress value={book.progress_percent} className="h-1 md:h-2" />
                 </div>
 
                 <Button 
                   onClick={() => navigate(`/dashboard/read/${book.book_id}`)}
-                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground mt-2 h-9 md:h-10 text-xs md:text-sm"
+                  className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground mt-1 h-7 md:h-10 text-[10px] md:text-sm"
                 >
-                  {book.progress_percent > 0 ? "Okumaya Devam Et" : "Okumaya Başla"}
+                  {book.progress_percent > 0 ? "Devam" : "Başla"}
                 </Button>
               </div>
             </div>
