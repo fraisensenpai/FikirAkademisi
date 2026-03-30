@@ -111,7 +111,9 @@ export function AppSidebar() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold truncate text-foreground">{profile?.full_name}</p>
-              <p className="text-[10px] uppercase tracking-tighter text-muted-foreground font-bold">{role === 'admin' ? 'Yönetici' : role === 'teacher' ? 'Öğretmen' : 'Öğrenci'}</p>
+              <p className="text-[10px] uppercase tracking-tighter text-muted-foreground font-bold">
+                {role === 'admin' ? 'Yönetici' : role === 'developer' ? 'Geliştirici' : role === 'teacher' ? 'Öğretmen' : 'Öğrenci'}
+              </p>
             </div>
           </div>
           <Button 
