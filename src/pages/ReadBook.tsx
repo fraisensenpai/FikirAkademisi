@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, Maximize2, Minimize2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Document, Page, pdfjs } from "react-pdf";
 
@@ -181,33 +181,49 @@ export default function ReadBook() {
           </Document>
         </div>
 
-        {/* Dynamic Action Bar */}
-        <div className="fixed bottom-0 left-0 right-0 p-6 flex flex-col items-center pointer-events-none">
-          <div className="w-full max-w-lg bg-background/90 backdrop-blur-2xl p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/10 flex items-center gap-4 pointer-events-auto ring-1 ring-white/5">
-            <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
-               <div 
-                className="h-full bg-primary transition-all duration-500 ease-out shadow-[0_0_10px_rgba(255,255,255,0.3)]" 
-                style={{ width: `${(currentPage / (numPages || 1)) * 100}%` }}
-               />
+        {/* Dynamic Action Bar - Moved below PDF for better visibility */}
+        <div className="w-full max-w-4xl mt-8 mb-12 animate-fade-in group px-2">
+          <div className="bg-background/40 backdrop-blur-md rounded-2xl p-4 md:p-6 border border-white/10 shadow-2xl space-y-4 md:space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-2 flex-1">
+                <div className="flex justify-between text-xs font-mono text-white/50 mb-1">
+                  <span className="uppercase tracking-widest">Okuma İlerlemesi</span>
+                  <span className="text-primary font-bold">{Math.round((currentPage / (numPages || 1)) * 100)}%</span>
+                </div>
+                <div className="h-2 md:h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <div 
+                    className="h-full bg-primary transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
+                    style={{ width: `${(currentPage / (numPages || 1)) * 100}%` }}
+                  />
+                </div>
+              </div>
+              
+              <Button
+                onClick={handleNextPage}
+                disabled={saving || isLastPage}
+                size="lg"
+                className="bg-primary hover:bg-primary/90 text-white font-bold h-12 md:h-16 px-6 md:px-10 rounded-xl shadow-xl transition-all active:scale-95 group shrink-0"
+              >
+                {saving ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <>
+                    <span className="text-sm md:text-base">
+                      {isLastPage ? "Kitabı Bitirdin! 🎉" : "Sonraki Sayfaya Geç"}
+                    </span>
+                    {!isLastPage && <ChevronRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />}
+                  </>
+                )}
+              </Button>
             </div>
             
-            <Button
-              onClick={handleNextPage}
-              disabled={saving || isLastPage}
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-white font-bold h-14 px-8 rounded-xl shadow-xl transition-all active:scale-95 group min-w-[200px]"
-            >
-              {saving ? (
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              ) : (
-                <>
-                  {isLastPage ? "Kitap Bitti" : "Sonraki Sayfa"}
-                  {!isLastPage && <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />}
-                </>
-              )}
-            </Button>
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-white/5">
+              <Clock className="w-3.5 h-3.5 text-white/20" />
+              <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] font-medium italic">
+                İlerlemeniz {currentPage}. sayfada otomatik olarak buluta kaydedildi
+              </p>
+            </div>
           </div>
-          <p className="mt-4 text-[10px] text-white/30 uppercase tracking-[0.2em] font-medium">Sayfa geçişinde ilerlemeniz otomatik kaydedilir</p>
         </div>
       </main>
     </div>
