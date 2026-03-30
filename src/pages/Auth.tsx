@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { BookOpen, Mail, Lock, User, Hash } from "lucide-react";
+import { BookOpen, Mail, Lock, User, Hash, GraduationCap } from "lucide-react";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +15,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [schoolNumber, setSchoolNumber] = useState("");
+  const [className, setClassName] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +33,11 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            data: { full_name: fullName },
+            data: { 
+              full_name: fullName,
+              school_number: schoolNumber,
+              class_name: className
+            },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -103,6 +109,19 @@ export default function AuthPage() {
                       className="pl-10"
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="className">Sınıf</Label>
+                  <Select onValueChange={setClassName} required>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sınıfınızı seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['Haz-A', 'Haz-B', 'Haz-C', 'Haz-D', 'Haz-E', 'Haz-F', 'Haz-G', 'Haz-H'].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
             )}

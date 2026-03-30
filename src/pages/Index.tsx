@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, BarChart3, Shield, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -30,9 +31,12 @@ export default function Index() {
               </div>
               <span className="font-display font-bold text-foreground">Saraç Fikir Akademisi</span>
             </div>
-            <Button onClick={() => navigate("/auth")} variant="outline">
-              Giriş Yap
-            </Button>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+              <Button onClick={() => navigate("/auth")} variant="outline">
+                Giriş Yap
+              </Button>
+            </div>
           </nav>
 
           {/* Hero content */}
@@ -74,8 +78,9 @@ export default function Index() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        © 2026 Saraç Fikir Akademisi. Tüm hakları saklıdır.
+      <footer className="border-t py-12 text-center text-sm text-muted-foreground space-y-2">
+        <p>© {new Date().getFullYear()} Saraç Fikir Akademisi. Tüm hakları saklıdır.</p>
+        <p className="text-xs opacity-70 italic font-medium">FraisenSenpai tarafından ❤️ ile yapıldı</p>
       </footer>
     </div>
   );
