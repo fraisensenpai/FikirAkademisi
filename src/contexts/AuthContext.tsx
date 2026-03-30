@@ -11,6 +11,7 @@ interface Profile {
   role: AppRole;
   school_number: string | null;
   class_name: string | null;
+  last_device?: string | null;
 }
 
 interface AuthContextType {
@@ -20,6 +21,16 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
 }
+
+const getDeviceInfo = () => {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return "Android Telefon";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iPhone/iPad";
+  if (/windows/i.test(ua)) return "Windows Bilgisayar";
+  if (/macintosh/i.test(ua)) return "Mac Bilgisayar";
+  if (/linux/i.test(ua)) return "Linux";
+  return "Mobil/Diğer Cihaz";
+};
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
@@ -37,12 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, role, school_number, class_name")
+    // any cast kullanarak yeni sütun hatasını engelliyoruz
+    const { data } = await (supabase.from("profiles") as any)
+      .select("id, full_name, role, school_number, class_name, last_device")
       .eq("id", userId)
       .single();
-    setProfile(data);
+    
+    if (data) {
+      setProfile(data as Profile);
+
+      // Cihaz bilgisini güncelle (Arka planda sessizce yap)
+      const currentDevice = getDeviceInfo();
+      if (data.last_device !== currentDevice) {
+        await (supabase.from("profiles") as any)
+          .update({ last_device: currentDevice })
+          .eq("id", userId);
+      }
+    }
   };
 
   useEffect(() => {

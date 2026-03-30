@@ -17,6 +17,7 @@ interface UserProfile {
   role: AppRole;
   school_number: string | null;
   class_name: string | null;
+  last_device?: string | null;
 }
 
 export default function UserManagement() {
@@ -102,6 +103,7 @@ export default function UserManagement() {
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Ad Soyad</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Okul No</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Sınıf</th>
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Cihaz</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Rol</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">İşlem</th>
               </tr>
@@ -112,6 +114,11 @@ export default function UserManagement() {
                   <td className="p-3 font-medium text-foreground">{u.full_name || "—"}</td>
                   <td className="p-3 text-muted-foreground">{u.school_number || "—"}</td>
                   <td className="p-3 text-muted-foreground">{u.class_name || "—"}</td>
+                  <td className="p-3">
+                    <span className="text-xs bg-muted p-1 px-2 rounded border border-border/50 text-muted-foreground">
+                      {u.last_device || "Bilinmiyor"}
+                    </span>
+                  </td>
                   <td className="p-3">
                     {editingId === u.id ? (
                       <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
