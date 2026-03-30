@@ -35,6 +35,9 @@ const App = () => (
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <footer className="fixed bottom-4 left-0 right-0 text-center text-[10px] text-muted-foreground/50 z-50 pointer-events-none">
+            FraisenSenpai tarafından ❤️ ile yapıldı
+          </footer>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
