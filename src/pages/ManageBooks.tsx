@@ -43,7 +43,19 @@ export default function ManageBooks() {
 
     setUploading(true);
     const file = fileRef.current.files[0];
-    const fileName = `${Date.now()}-${file.name}`;
+    
+    // Temiz dosya ismi oluştur (Boşluk vs. temizle)
+    const cleanFileName = (name: string) => {
+      const trMap: { [key: string]: string } = {
+        'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+        'Ç': 'C', 'Ğ': 'G', 'İ': 'I', 'Ö': 'O', 'Ş': 'S', 'Ü': 'U'
+      };
+      return name.replace(/[çğıöşüÇĞİÖŞÜ]/g, (m) => trMap[m])
+                 .replace(/[^a-zA-Z0-9.]/g, '-')
+                 .replace(/-+/g, '-');
+    };
+
+    const fileName = `${Date.now()}-${cleanFileName(file.name)}`;
 
     try {
       const { error: uploadError } = await supabase.storage
