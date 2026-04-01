@@ -90,22 +90,33 @@ export default function Assignments() {
     setTrackingStudents([]);
     try {
       // 1. Get total pages from the assignment's book
-      const bookId = assignment.book_id || (assignment as any).book?.id; 
-      // If assignment query didn't include book_id directly, we find it:
       const { data: bookInfo } = await supabase.from("books").select("total_pages").eq("id", assignment.book_id).single();
       const totalPages = bookInfo?.total_pages || 0;
 
-      // 2. Get all students in that class (using ilike for case insensitivity)
-      const { data: students, error: studentError } = await supabase
-        .from("profiles")
-        .select("id, full_name, school_number")
-        .ilike("class_name", assignment.target_class)
-        .eq("role", "student");
+      console.log("Aranan Sınıf (Target Class):", assignment.target_class);
 
-      if (studentError) throw studentError;
+      // 2. Get all students in that class (without strict role filter first to debug)
+      const { data: students, error: studentError } = await (supabase.from("profiles") as any)
+        .select("id, full_name, school_number, role, class_name")
+        .ilike("class_name", assignment.target_class);
 
-      // 3. Get progress for all students for this book
-      const results: StudentProgress[] = await Promise.all((students || []).map(async (s) => {
+      if (studentError) {
+        console.error("Öğrenci çekme hatası:", studentError);
+        throw studentError;
+      }
+
+      console.log("Bulunan Toplam Kişi (Filtresiz):", students?.length);
+      console.log("Gelen Veriler:", students);
+
+      // 3. Kod tarafında filtreleyelim (büyük/küçük harf veya boşluklara karşı daha güvenli)
+      const studentOnly = (students || []).filter((s: any) => 
+        String(s.role).toLowerCase() === 'student'
+      );
+      
+      console.log("Öğrenci Rolünde Tespit Edilenler:", studentOnly.length);
+
+      // 4. Get progress for filtered students
+      const results: StudentProgress[] = await Promise.all(studentOnly.map(async (s: any) => {
         const { data: progress } = await supabase
           .from("user_books")
           .select("current_page, progress_percent, is_completed")
@@ -117,7 +128,7 @@ export default function Assignments() {
           full_name: s.full_name,
           school_number: s.school_number || "---",
           current_page: progress?.current_page || 0,
-          total_pages: totalPages, // Always use the book's total pages
+          total_pages: totalPages,
           progress_percent: progress?.progress_percent || 0,
           is_completed: progress?.is_completed || false,
         };
@@ -125,6 +136,7 @@ export default function Assignments() {
 
       setTrackingStudents(results);
     } catch (err) {
+      console.error("Genel Hata:", err);
       toast.error("Detaylar alınamadı");
     } finally {
       setTrackingLoading(false);
