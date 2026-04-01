@@ -16,6 +16,7 @@ export default function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [schoolNumber, setSchoolNumber] = useState("");
   const [className, setClassName] = useState("");
+  const [role, setRole] = useState<"student" | "teacher">("student");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,14 +36,14 @@ export default function AuthPage() {
           options: {
             data: { 
               full_name: fullName,
-              school_number: schoolNumber,
-              class_name: className
+              role: role,
+              school_number: role === "student" ? schoolNumber : null,
+              class_name: role === "student" ? className : null
             },
             emailRedirectTo: window.location.origin,
           },
         });
         if (error) throw error;
-        // Update profile with school number
         toast.success("Kayıt başarılı! Giriş yapabilirsiniz.");
         setIsLogin(true);
       }
@@ -69,7 +70,7 @@ export default function AuthPage() {
             <BookOpen className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-display font-bold text-foreground">
-            Saraç Fikir Akademisi
+            Fikir Akademisi
           </h1>
           <p className="text-muted-foreground mt-1">Dijital Okuma Platformu</p>
         </div>
@@ -84,6 +85,18 @@ export default function AuthPage() {
             {!isLogin && (
               <>
                 <div className="space-y-2">
+                  <Label>Hesap Türü</Label>
+                  <Select value={role} onValueChange={(v: any) => setRole(v)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Hesap türü seçin" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Öğrenci</SelectItem>
+                      <SelectItem value="teacher">Öğretmen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="fullName">Ad Soyad</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -97,32 +110,37 @@ export default function AuthPage() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="schoolNumber">Okul Numarası</Label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="schoolNumber"
-                      value={schoolNumber}
-                      onChange={(e) => setSchoolNumber(e.target.value)}
-                      placeholder="Okul numaranız"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="className">Sınıf</Label>
-                  <Select onValueChange={setClassName} required>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sınıfınızı seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {['Haz-A', 'Haz-B', 'Haz-C', 'Haz-D', 'Haz-E', 'Haz-F', 'Haz-G', 'Haz-H'].map(c => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {role === "student" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="schoolNumber">Okul Numarası</Label>
+                      <div className="relative">
+                        <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="schoolNumber"
+                          value={schoolNumber}
+                          onChange={(e) => setSchoolNumber(e.target.value)}
+                          placeholder="Okul numaranız"
+                          className="pl-10"
+                          required={role === "student"}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="className">Sınıf</Label>
+                      <Select onValueChange={setClassName} required={role === "student"}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Sınıfınızı seçin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {['Haz-A', 'Haz-B', 'Haz-C', 'Haz-D', 'Haz-E', 'Haz-F', 'Haz-G', 'Haz-H'].map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
               </>
             )}
 
