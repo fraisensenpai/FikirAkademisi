@@ -95,11 +95,11 @@ export default function Assignments() {
       const { data: bookInfo } = await supabase.from("books").select("total_pages").eq("id", assignment.book_id).single();
       const totalPages = bookInfo?.total_pages || 0;
 
-      // 2. Get all students in that class
+      // 2. Get all students in that class (using ilike for case insensitivity)
       const { data: students, error: studentError } = await supabase
         .from("profiles")
         .select("id, full_name, school_number")
-        .eq("class_name", assignment.target_class)
+        .ilike("class_name", assignment.target_class)
         .eq("role", "student");
 
       if (studentError) throw studentError;
