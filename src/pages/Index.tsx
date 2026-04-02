@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Users, BarChart3, Shield, ArrowRight } from "lucide-react";
+import { BookOpen, Users, BarChart3, Shield, ArrowRight, Sparkles, BookMarked, BrainCircuit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -7,81 +7,158 @@ export default function Index() {
   const navigate = useNavigate();
 
   const features = [
-    { icon: BookOpen, title: "Dijital Okuma", desc: "PDF kitapları okuyun, ilerlemenizi takip edin" },
-    { icon: BarChart3, title: "Akıllı Takip", desc: "Gerçek okuma davranışı analizi ve anti-cheat sistemi" },
-    { icon: Users, title: "Sınıf Yönetimi", desc: "Öğretmenler kitap atayıp öğrenci ilerlemelerini görsün" },
-    { icon: Shield, title: "Rol Tabanlı Erişim", desc: "Öğrenci, öğretmen ve yönetici panelleri" },
+    { icon: BookOpen, title: "Dijital Okuma", desc: "PDF kitapları okuyun, ilerlemenizi saniye saniye takip edin.", color: "text-blue-500" },
+    { icon: BarChart3, title: "Akıllı Analitik", desc: "Okuma hızı ve odaklanma süresi gibi derin verilerle gelişimi görün.", color: "text-emerald-500" },
+    { icon: BrainCircuit, title: "Sınıf Yönetimi", desc: "Öğretmenler için tek tıkla kitap atama ve performans izleme.", color: "text-purple-500" },
+    { icon: Shield, title: "Güvenli Sistem", desc: "Anti-cheat ve rol tabanlı erişim ile tam güvenlik.", color: "text-amber-500" },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-secondary/8 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
-        </div>
+    <div className="min-h-screen bg-background selection:bg-primary/20 overflow-x-hidden">
+      {/* Premium Mesh Background */}
+      <div className="fixed inset-0 mesh-gradient opacity-60 pointer-events-none" />
+      
+      {/* Decorative Floating Elements */}
+      <div className="fixed -top-24 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-[120px] animate-float pointer-events-none" />
+      <div className="fixed top-1/2 -right-40 w-80 h-80 bg-secondary/5 rounded-full blur-[100px] animate-float pointer-events-none" style={{ animationDelay: '2s' }} />
 
-        <div className="relative max-w-6xl mx-auto px-6 pt-12 pb-20">
-          {/* Nav */}
-          <nav className="flex items-center justify-between mb-20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-display font-bold text-foreground">Saraç Fikir Akademisi</span>
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate("/")}>
+            <div className="w-12 h-12 rounded-2xl bg-primary shadow-2xl shadow-primary/20 flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300">
+              <BookMarked className="w-6 h-6 text-primary-foreground" />
             </div>
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <Button onClick={() => navigate("/auth")} variant="outline">
-                Giriş Yap
-              </Button>
-            </div>
-          </nav>
-
-          {/* Hero content */}
-          <div className="max-w-3xl animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-display font-bold text-foreground leading-tight mb-6">
-              Dijital Okuma ve
-              <span className="text-gradient block">Takip Platformu</span>
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 max-w-xl">
-              Öğrencilerin okuma alışkanlıklarını takip edin, kitap atayın ve 
-              gerçek zamanlı analitiklerle sınıf performansını izleyin.
-            </p>
-            <div className="flex gap-4">
-              <Button
-                onClick={() => navigate("/auth")}
-                size="lg"
-                className="bg-primary hover:bg-primary/90"
-              >
-                Başla <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+            <div className="flex flex-col">
+              <span className="font-display font-extrabold text-xl tracking-tight text-foreground">Fikir Akademisi</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60 leading-none">Saraç Vakfı</span>
             </div>
           </div>
-        </div>
-      </div>
+          <div className="flex items-center gap-6">
+            <ThemeToggle />
+            <Button 
+              onClick={() => navigate("/auth")} 
+              variant="ghost" 
+              className="font-bold hover:bg-white/5 hidden md:flex"
+            >
+              Giriş Yap
+            </Button>
+            <Button 
+              onClick={() => navigate("/auth")}
+              className="bg-primary text-primary-foreground font-bold px-8 h-12 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+            >
+              Hemen Başla
+            </Button>
+          </div>
+        </nav>
 
-      {/* Features */}
-      <div className="max-w-6xl mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((f) => (
-            <div key={f.title} className="glass-card p-6 hover:shadow-xl transition-all duration-300 animate-slide-up">
-              <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center mb-4">
-                <f.icon className="w-6 h-6 text-secondary" />
+        {/* Hero Section */}
+        <main className="max-w-7xl mx-auto px-6 pt-20 pb-32">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="animate-slide-up">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-bold mb-8 animate-fade-in">
+                <Sparkles className="w-4 h-4" />
+                <span>Dijital Okuma Devrimi Başladı</span>
               </div>
-              <h3 className="font-semibold text-foreground mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground">{f.desc}</p>
+              <h1 className="text-5xl md:text-7xl font-display font-extrabold text-foreground leading-[1.1] mb-8">
+                Geleceğin <br />
+                <span className="text-gradient">Okuma Deneyimi</span>
+              </h1>
+              <p className="text-xl text-muted-foreground/80 leading-relaxed mb-12 max-w-lg">
+                Klasik kitap takibini geride bırakın. Yeni nesil analizler, gerçek zamanlı okuma verileri ve 
+                interaktif sosyal özelliklerle kütüphanenizi dijitalleştirin.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <Button
+                  onClick={() => navigate("/auth")}
+                  size="lg"
+                  className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-2xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all group"
+                >
+                  Ücretsiz Kayıt Ol <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <div className="flex -space-x-3 items-center ml-2">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted overflow-hidden flex items-center justify-center">
+                      <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                  <div className="pl-6">
+                    <p className="text-xs font-bold text-foreground">1,000+ Öğrenci</p>
+                    <p className="text-[10px] text-muted-foreground font-medium">Aktif olarak okuyor</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="border-t py-12 text-center text-sm text-muted-foreground space-y-2">
-        <p>© {new Date().getFullYear()} Saraç Fikir Akademisi. Tüm hakları saklıdır.</p>
-        <p className="text-xs opacity-70 italic font-medium">FraisenSenpai tarafından ❤️ ile yapıldı</p>
-      </footer>
+            <div className="hidden lg:block relative animate-fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="relative z-10 glass-premium p-10 border-white/20 shadow-2xl rotate-3 animate-float overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="space-y-6">
+                  <div className="h-8 w-32 bg-primary/20 rounded-full animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-full bg-foreground/10 rounded-full" />
+                    <div className="h-4 w-3/4 bg-foreground/10 rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-4">
+                    <div className="h-24 rounded-2xl bg-primary/5 border border-white/10" />
+                    <div className="h-24 rounded-2xl bg-secondary/5 border border-white/10" />
+                  </div>
+                </div>
+              </div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/10 rounded-full blur-[100px] -z-10" />
+            </div>
+          </div>
+        </main>
+
+        {/* Features Grid */}
+        <section className="max-w-7xl mx-auto px-6 py-32 border-t border-white/5">
+          <div className="text-center max-w-2xl mx-auto mb-20 animate-fade-in">
+            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 italic tracking-tight">Akıllı Özellikler</h2>
+            <p className="text-muted-foreground">Eğitim teknolojilerinde en son standartları kütüphanenize taşıyoruz.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((f, idx) => (
+              <div 
+                key={idx} 
+                className="glass-premium p-8 hover:scale-[1.02] hover:bg-white/50 dark:hover:bg-white/5 transition-all duration-500 animate-slide-up group"
+                style={{ animationDelay: `${idx * 0.1}s` }}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-background shadow-xl flex items-center justify-center mb-6 transform group-hover:rotate-12 transition-transform duration-300 ${f.color}`}>
+                  <f.icon className="w-7 h-7" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-4">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed italic">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Improved Footer */}
+        <footer className="border-t border-white/5 pt-20 pb-12">
+          <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-12 mb-16">
+            <div className="space-y-4">
+              <span className="font-display font-bold text-lg">Fikir Akademisi</span>
+              <p className="text-sm text-muted-foreground">Dijital okuma alışkanlıklarını geleceğe taşıyan vakıf girişimi.</p>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-bold text-sm uppercase tracking-widest text-primary">Bağlantılar</h4>
+              <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
+                <a href="#" className="hover:text-primary transition-colors">Ana Sayfa</a>
+                <a href="#" className="hover:text-primary transition-colors">Kütüphane</a>
+                <a href="#" className="hover:text-primary transition-colors">İstatistikler</a>
+              </nav>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-bold text-sm uppercase tracking-widest text-primary">İletişim</h4>
+              <p className="text-sm text-muted-foreground italic">info@fikirakademisi.org</p>
+            </div>
+          </div>
+          <div className="text-center text-xs text-muted-foreground/50 font-medium">
+            <p>© {new Date().getFullYear()} Saraç Fikir Akademisi. Tüm hakları saklıdır.</p>
+            <p className="mt-2">FraisenSenpai tarafından ❤️ ile yapıldı</p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

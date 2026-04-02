@@ -21,11 +21,14 @@ import {
   LogOut,
   User,
   MessageSquare,
+  Sparkles,
+  ChevronRight,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function AppSidebar() {
   const { profile } = useAuth();
@@ -69,35 +72,44 @@ export function AppSidebar() {
       : studentItems;
 
   return (
-    <Sidebar>
-      <SidebarContent>
+    <Sidebar className="border-r border-white/5 bg-[#0a0c10]/95 backdrop-blur-3xl">
+      <SidebarContent className="p-4">
         <SidebarGroup>
-          <div className="px-4 py-6 mb-2 border-b border-sidebar-border/50">
-            <h2 className="text-xl font-display font-bold text-primary flex items-center gap-2">
-              <BookOpen className="w-6 h-6" />
-              Fikir Akademisi
-            </h2>
+          <div className="px-3 py-6 mb-8 flex items-center gap-3 animate-fade-in">
+            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30">
+              <BookOpen className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-display font-black text-lg tracking-tight text-foreground leading-none mb-1">Fikir Akademisi</span>
+              <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-primary animate-pulse">Dijital Kütüphane</span>
+            </div>
           </div>
-          <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60 mb-2">
-            Menü
+
+          <SidebarGroupLabel className="px-4 text-[10px] uppercase tracking-[0.3em] font-black text-muted-foreground/40 mb-4 select-none">
+            Ana Kontroller
           </SidebarGroupLabel>
+          
           <SidebarGroupContent>
-            <SidebarMenu className="px-2 gap-1">
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+            <SidebarMenu className="gap-2">
+              {menuItems.map((item, idx) => (
+                <SidebarMenuItem key={item.title} className="animate-slide-up" style={{ animationDelay: `${idx * 0.05}s` }}>
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === item.url}
                     className={`
-                      transition-all duration-300 rounded-xl h-10 px-3
+                      w-full h-12 px-4 rounded-2xl transition-all duration-300 group relative overflow-hidden
                       ${location.pathname === item.url 
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary" 
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"}
+                        ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20" 
+                        : "hover:bg-white/5 text-muted-foreground/70 hover:text-foreground"}
                     `}
                   >
-                    <Link to={item.url} className="flex items-center gap-3">
-                      <item.icon className={`w-5 h-5 ${location.pathname === item.url ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary transition-colors"}`} />
-                      <span className="font-medium text-sm">{item.title}</span>
+                    <Link to={item.url} className="flex items-center gap-4">
+                      {location.pathname === item.url && (
+                        <div className="absolute left-0 w-1 h-6 bg-white/50 rounded-full blur-[2px]" />
+                      )}
+                      <item.icon className={`w-5 h-5 transition-transform duration-500 group-hover:scale-110 ${location.pathname === item.url ? "text-primary-foreground stroke-[2.5px]" : "text-muted-foreground group-hover:text-primary"}`} />
+                      <span className={`font-bold text-sm tracking-tight ${location.pathname === item.url ? 'text-white' : ''}`}>{item.title}</span>
+                      {location.pathname === item.url && <ChevronRight className="w-4 h-4 ml-auto opacity-50" />}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -107,27 +119,34 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-sidebar-border/50">
-        <div className="flex items-center justify-between gap-2 bg-muted/30 p-3 rounded-2xl border border-border/50">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <User className="w-4 h-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold truncate text-foreground">{profile?.full_name}</p>
-              <p className="text-[10px] uppercase tracking-tighter text-muted-foreground font-bold">
-                {role === 'admin' ? 'Yönetici' : role === 'developer' ? 'Geliştirici' : role === 'teacher' ? 'Öğretmen' : 'Öğrenci'}
-              </p>
+      <SidebarFooter className="p-6">
+        <div className="glass-premium p-4 border-white/5 shadow-2xl relative overflow-hidden group">
+          <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-700" />
+          <div className="flex items-center gap-3 mb-4">
+            <Avatar className="w-10 h-10 border-2 border-primary/20 p-0.5">
+              <AvatarFallback className="bg-primary/10 text-primary font-black text-xs uppercase tracking-tighter">
+                {profile?.full_name?.substring(0, 2) || "FA"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black text-foreground truncate italic leading-tight">{profile?.full_name}</p>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">{role}</span>
+              </div>
             </div>
           </div>
           <Button 
             variant="ghost" 
-            size="icon" 
             onClick={handleLogout}
-            className="text-muted-foreground hover:text-rose-500 hover:bg-rose-50 transition-colors shrink-0"
+            className="w-full h-10 rounded-xl bg-white/5 hover:bg-destructive shadow-sm hover:text-destructive-foreground transition-all duration-500 group"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] uppercase tracking-widest font-black">Güvenli Çıkış</span>
           </Button>
+        </div>
+        <div className="mt-4 px-2 text-[9px] text-center font-bold uppercase tracking-[0.3em] text-muted-foreground/30 italic">
+          Saraç Fikir Akademisi v2.0
         </div>
       </SidebarFooter>
     </Sidebar>
