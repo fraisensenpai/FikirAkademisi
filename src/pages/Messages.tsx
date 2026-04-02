@@ -56,9 +56,13 @@ export default function Messages() {
 
   useEffect(() => {
     fetchProfiles();
+    let cleanup: any;
     if (user) {
-      subscribeToMessages();
+      cleanup = subscribeToMessages();
     }
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [user]);
 
   useEffect(() => {
