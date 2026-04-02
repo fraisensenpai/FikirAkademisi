@@ -67,7 +67,7 @@ export default function AuthPage() {
         {/* Logo area */}
         <div className="text-center mb-8 animate-fade-in">
           <div 
-            className="inline-flex items-center justify-center w-20 h-20 rounded-[2.5rem] bg-primary shadow-2xl shadow-primary/20 mb-6 cursor-pointer hover:rotate-12 transition-transform duration-500 group"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-[2.5rem] bg-secondary shadow-2xl shadow-secondary/20 mb-6 cursor-pointer hover:rotate-12 transition-transform duration-500 group"
             onClick={() => navigate("/")}
           >
             <BookOpen className="w-10 h-10 text-primary-foreground group-hover:scale-110 transition-transform" />
@@ -175,10 +175,7 @@ export default function AuthPage() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between ml-1 leading-none">
-                <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Şifre</Label>
-                {isLogin && <button type="button" className="text-[10px] text-primary/70 hover:text-primary font-bold transition-colors uppercase tracking-widest">Şifremi Unuttum</button>}
-              </div>
+              <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 ml-1">Şifre</Label>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
@@ -196,7 +193,7 @@ export default function AuthPage() {
 
             <Button
               type="submit"
-              className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-2xl shadow-primary/25 hover:scale-[1.02] active:scale-95 transition-all mt-4 border-none"
+              className="w-full h-14 rounded-2xl bg-secondary text-white font-bold text-lg shadow-2xl shadow-secondary/25 hover:scale-[1.02] active:scale-95 transition-all mt-4 border-none"
               disabled={loading}
             >
               {loading ? (

@@ -76,12 +76,12 @@ export function AppSidebar() {
       <SidebarContent className="p-4">
         <SidebarGroup>
           <div className="px-3 py-6 mb-8 flex items-center gap-3 animate-fade-in">
-            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30">
+            <div className="w-10 h-10 rounded-2xl bg-secondary flex items-center justify-center shadow-2xl shadow-secondary/30">
               <BookOpen className="w-6 h-6 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
               <span className="font-display font-black text-lg tracking-tight text-foreground leading-none mb-1">Fikir Akademisi</span>
-              <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-primary animate-pulse">Dijital Kütüphane</span>
+              <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-secondary animate-pulse">M. Emin Saraç AİHL</span>
             </div>
           </div>
 

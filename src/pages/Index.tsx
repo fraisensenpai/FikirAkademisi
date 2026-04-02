@@ -26,12 +26,12 @@ export default function Index() {
         {/* Navigation */}
         <nav className="max-w-7xl mx-auto px-6 py-8 flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate("/")}>
-            <div className="w-12 h-12 rounded-2xl bg-primary shadow-2xl shadow-primary/20 flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300">
+            <div className="w-12 h-12 rounded-2xl bg-secondary shadow-2xl shadow-secondary/20 flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-300">
               <BookMarked className="w-6 h-6 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
               <span className="font-display font-extrabold text-xl tracking-tight text-foreground">Fikir Akademisi</span>
-              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/60 leading-none">Saraç Vakfı</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-secondary leading-none">M. Emin Saraç AİHL</span>
             </div>
           </div>
           <div className="flex items-center gap-6">
@@ -45,7 +45,7 @@ export default function Index() {
             </Button>
             <Button 
               onClick={() => navigate("/auth")}
-              className="bg-primary text-primary-foreground font-bold px-8 h-12 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+              className="bg-secondary text-white font-bold px-8 h-12 rounded-2xl shadow-xl shadow-secondary/20 hover:scale-105 active:scale-95 transition-all"
             >
               Hemen Başla
             </Button>
@@ -56,7 +56,7 @@ export default function Index() {
         <main className="max-w-7xl mx-auto px-6 pt-20 pb-32">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="animate-slide-up">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-bold mb-8 animate-fade-in">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/5 border border-secondary/10 text-secondary text-sm font-bold mb-8 animate-fade-in">
                 <Sparkles className="w-4 h-4" />
                 <span>Dijital Okuma Devrimi Başladı</span>
               </div>
@@ -72,21 +72,10 @@ export default function Index() {
                 <Button
                   onClick={() => navigate("/auth")}
                   size="lg"
-                  className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-2xl shadow-primary/25 hover:scale-105 active:scale-95 transition-all group"
+                  className="h-16 px-10 rounded-2xl bg-secondary text-white font-bold text-lg shadow-2xl shadow-secondary/25 hover:scale-105 active:scale-95 transition-all group"
                 >
                   Ücretsiz Kayıt Ol <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                 </Button>
-                <div className="flex -space-x-3 items-center ml-2">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted overflow-hidden flex items-center justify-center">
-                      <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                  <div className="pl-6">
-                    <p className="text-xs font-bold text-foreground">1,000+ Öğrenci</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">Aktif olarak okuyor</p>
-                  </div>
-                </div>
               </div>
             </div>
 
