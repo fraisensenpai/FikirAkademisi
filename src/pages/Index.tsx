@@ -138,8 +138,8 @@ export default function Index() {
               </nav>
             </div>
             <div className="space-y-4">
-              <h4 className="font-bold text-sm uppercase tracking-widest text-primary">İletişim</h4>
-              <p className="text-sm text-muted-foreground italic">info@fikirakademisi.org</p>
+              <h4 className="font-bold text-sm uppercase tracking-widest text-secondary">İletişim</h4>
+              <p className="text-sm text-muted-foreground italic">mstfyzc.29@gmail.com</p>
             </div>
           </div>
           <div className="text-center text-xs text-muted-foreground/50 font-medium">

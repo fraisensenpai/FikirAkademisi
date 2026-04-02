@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export default function DashboardLayout() {
   const { user, loading } = useAuth();
@@ -36,9 +37,18 @@ export default function DashboardLayout() {
         <AppSidebar />
         <main className="flex-1 overflow-y-auto relative z-10">
           <div className="container mx-auto p-4 md:p-8 animate-fade-in">
-            <div className="flex items-center justify-between mb-8 md:hidden">
-              <SidebarTrigger className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 shadow-lg text-primary" />
-              <div className="text-[10px] uppercase font-black tracking-widest text-primary/60 italic">Fikir Akademisi</div>
+            {/* Top Header Controls */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger className="h-11 w-11 rounded-xl bg-white/5 border border-white/10 shadow-lg text-secondary md:hidden" />
+                <div className="hidden md:block">
+                  <h1 className="text-[10px] uppercase font-black tracking-[0.3em] text-muted-foreground/30 italic">Panel / Genel Bakış</h1>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 glass-premium p-1.5 border-white/5 shadow-2xl shadow-primary/5">
+                <div className="hidden sm:block px-4 border-r border-white/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Görünüm Ayarları</div>
+                <ThemeToggle />
+              </div>
             </div>
             <Outlet />
           </div>
