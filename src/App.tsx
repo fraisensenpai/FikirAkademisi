@@ -14,6 +14,7 @@ import ManageBooks from "./pages/ManageBooks";
 import Assignments from "./pages/Assignments";
 import Analytics from "./pages/Analytics";
 import Books from "./pages/Books";
+import Messages from "./pages/Messages";
 import ReadBook from "./pages/ReadBook";
 import BookRequests from "./pages/BookRequests";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="books" element={<Books />} />
                 <Route path="read/:bookId" element={<ReadBook />} />
                 <Route path="book-requests" element={<BookRequests />} />
+                <Route path="messages" element={<Messages />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

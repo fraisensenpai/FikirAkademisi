@@ -20,6 +20,7 @@ import {
   ClipboardList,
   LogOut,
   User,
+  MessageSquare,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -44,6 +45,7 @@ export function AppSidebar() {
     { title: "Kitap Yönetimi", url: "/dashboard/manage-books", icon: BookOpen },
     { title: "Kitap İstekleri", url: "/dashboard/book-requests", icon: BookMarked },
     { title: "İstatistikler", url: "/dashboard/analytics", icon: BarChart3 },
+    { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
   ];
 
   const teacherItems = [
@@ -51,11 +53,13 @@ export function AppSidebar() {
     { title: "Ödev Atama", url: "/dashboard/assignments", icon: ClipboardList },
     { title: "Kitap İstekleri", url: "/dashboard/book-requests", icon: BookMarked },
     { title: "Raporlar", url: "/dashboard/analytics", icon: BarChart3 },
+    { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
   ];
 
   const studentItems = [
     { title: "Panel", url: "/dashboard", icon: LayoutDashboard },
     { title: "Kitaplarım", url: "/dashboard/books", icon: Library },
+    { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
   ];
 
   const menuItems = role === "admin" || role === "developer" 
