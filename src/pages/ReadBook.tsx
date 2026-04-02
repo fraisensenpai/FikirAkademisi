@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Loader2, Maximize2, Minimize2, Clock, Share2, User } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, Maximize2, Minimize2, Clock, Share2, User, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Worker for PDF.js - IMPORTANT!
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -48,6 +50,11 @@ export default function ReadBook() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<string>("");
   const [quote, setQuote] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+
+  const filteredParticipants = profiles.filter(p => 
+    p.full_name.toLowerCase().includes(userSearch.toLowerCase())
+  );
 
   useEffect(() => {
     const fetchBookAndProgress = async () => {
@@ -239,50 +246,71 @@ export default function ReadBook() {
                       <Share2 className="w-5 h-5 opacity-80" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md bg-background/95 backdrop-blur-xl border-white/5 rounded-3xl">
+                  <DialogContent className="sm:max-w-md bg-background/95 backdrop-blur-xl border-white/5 rounded-3xl p-6">
                     <DialogHeader>
-                      <DialogTitle className="text-2xl font-display font-bold">Alıntıyı Paylaş</DialogTitle>
+                      <DialogTitle className="text-2xl font-display font-bold text-foreground">Alıntıyı Paylaş</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
-                      <div className="space-y-2 text-left">
-                        <label className="text-xs font-bold uppercase opacity-40 ml-1 tracking-widest text-primary text-left block">KİME GÖNDERİLECEK?</label>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold uppercase opacity-60 tracking-widest text-primary">ARKADAŞINI BUL</label>
+                          <span className="text-[10px] opacity-40 font-mono italic">{filteredParticipants.length} kişi bulundu</span>
+                        </div>
+                        
+                        {/* Arama Kutusu */}
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                          <Input 
+                            placeholder="İsim ile ara..." 
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                            className="h-10 pl-9 bg-muted/40 border-white/10 rounded-xl text-sm transition-all focus:ring-1 focus:ring-primary text-foreground"
+                          />
+                        </div>
+
                         <Select onValueChange={setSelectedRecipient} value={selectedRecipient}>
-                          <SelectTrigger className="h-12 bg-white/5 border-white/10 rounded-xl px-4 text-white">
+                          <SelectTrigger className="h-12 bg-muted/40 border-white/10 rounded-xl px-4 text-foreground hover:bg-muted/60 transition-colors">
                             <SelectValue placeholder="Bir arkadaşını seç..." />
                           </SelectTrigger>
-                          <SelectContent className="bg-background/95 border-white/5 rounded-xl">
-                            {profiles.map(p => (
-                              <SelectItem key={p.id} value={p.id} className="focus:bg-primary/20 text-white cursor-pointer">
-                                {p.full_name}
+                          <SelectContent className="bg-background border-white/10 rounded-xl overflow-hidden shadow-2xl backdrop-blur-3xl">
+                            {filteredParticipants.slice(0, 50).map(p => (
+                              <SelectItem key={p.id} value={p.id} className="focus:bg-primary/20 text-foreground cursor-pointer py-2.5">
+                                <div className="flex flex-col gap-0.5 text-left">
+                                  <span className="font-medium text-sm">{p.full_name}</span>
+                                  {p.role && <span className="text-[9px] uppercase opacity-40 tracking-tighter">{p.role}</span>}
+                                </div>
                               </SelectItem>
                             ))}
+                            {filteredParticipants.length === 0 && (
+                              <div className="p-4 text-center text-xs opacity-50">Kimse bulunamadı.</div>
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="space-y-2 text-left">
-                        <label className="text-xs font-bold uppercase opacity-40 ml-1 tracking-widest text-primary text-left block">ALINTI / NOTUN</label>
-                        <Textarea
-                          placeholder="Bu kısım harikaydı, mutlaka okumalısın!..."
-                          className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl resize-none p-4 text-white"
+                        <label className="text-[10px] font-bold uppercase opacity-60 tracking-widest text-primary block">ALINTI / NOTUN</label>
+                        <Textarea 
+                          placeholder="Bu kısım harikaydı, mutlaka okumalısın!..." 
+                          className="min-h-[100px] bg-muted/40 border-white/10 rounded-2xl resize-none p-4 text-foreground text-sm focus:ring-1 focus:ring-primary placeholder:opacity-30"
                           value={quote}
                           onChange={(e) => setQuote(e.target.value)}
                         />
-                        <div className="flex items-center gap-2 px-1 opacity-50 italic text-[10px] text-white">
+                        <div className="flex items-center gap-2 px-1 opacity-50 italic text-[10px] text-foreground/70">
                           <Clock className="w-3 h-3" />
                           {book?.title} - Sayfa {currentPage} otomatik eklenecek.
                         </div>
                       </div>
 
-                      <Button
+                      <Button 
                         onClick={async () => {
                           if (!selectedRecipient || !quote.trim()) return toast.error("Kişi ve alıntı seçmelisiniz");
                           const { error } = await (supabase as any).from("messages").insert({
                             sender_id: user?.id,
                             receiver_id: selectedRecipient,
-                            content: "Selam! Bu kitaptan harika bir alıntıyı seninle paylaşmak istedim.",
+                            content: quote,
                             book_id: book?.id,
-                            quoted_text: quote,
+                            quoted_text: "Kitaptan bir alıntı paylaştı",
                             page_number: currentPage
                           });
                           if (!error) {
@@ -295,7 +323,7 @@ export default function ReadBook() {
                         }}
                         className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg shadow-xl hover:scale-[1.02] active:scale-95 transition-all outline-none border-none"
                       >
-                        Gönder
+                        Hemen Paylaş
                       </Button>
                     </div>
                   </DialogContent>
