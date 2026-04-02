@@ -108,15 +108,17 @@ export default function Messages() {
 
   const markAsRead = async (recipientId: string) => {
     if (!user) return;
-    await (supabase as any)
+    const { error } = await (supabase as any)
       .from("messages")
       .update({ is_read: true })
       .eq("receiver_id", user.id)
       .eq("sender_id", recipientId)
       .eq("is_read", false);
     
-    // Okundu yapınca listeyi tazele
-    fetchProfiles();
+    if (!error) {
+      // Sadece başarı durumunda listeyi tazele
+      fetchProfiles();
+    }
   };
 
   const fetchMessages = async () => {
@@ -132,8 +134,8 @@ export default function Messages() {
 
     setMessages(data || []);
     
-    // Sohbete girince okundu işaretle
-    markAsRead(selectedRecipient.id);
+    // Sohbete girince veya açıkken mesaj gelince okundu işaretle
+    await markAsRead(selectedRecipient.id);
   };
 
   const subscribeToMessages = () => {
