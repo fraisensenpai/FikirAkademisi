@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Send, Pin, BookOpen, User, Search, Trash2, ArrowLeft } from "lucide-react";
+import { Send, Pin, BookOpen, User, Search, Trash2, ArrowLeft, Check, CheckCheck } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -21,6 +21,7 @@ interface Message {
   receiver_id: string;
   content: string;
   created_at: string;
+  is_read: boolean;
   quoted_text?: string;
   page_number?: number;
   book?: { title: string };
@@ -157,6 +158,21 @@ export default function Messages() {
               fetchProfiles();
               toast.info("Yeni bir mesajınız var!");
             }
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const updatedMsg = payload.new as any;
+          // Eğer şu an sohbet ettiğimiz kişi bizim ona attığımız bir mesajı OKUDUYSA (is_read: true olduysa)
+          if (
+            updatedMsg.sender_id === user?.id && 
+            updatedMsg.receiver_id === selectedRecipient?.id && 
+            updatedMsg.is_read
+          ) {
+            fetchMessages();
           }
         }
       )
@@ -310,9 +326,20 @@ export default function Messages() {
                         <p className="text-sm font-medium">{msg.content}</p>
                       </div>
                       
-                      <span className="text-[10px] opacity-30 font-mono px-2">
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      <div className="flex items-center justify-end gap-1 px-2">
+                        <span className="text-[10px] opacity-30 font-mono">
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {msg.sender_id === user?.id && (
+                          <div className={`flex items-center gap-0.5 text-[8px] font-bold uppercase tracking-tighter ${msg.is_read ? "text-blue-500 animate-in fade-in" : "opacity-30"}`}>
+                            {msg.is_read ? (
+                              <><CheckCheck className="w-3 h-3" /> Görüldü</>
+                            ) : (
+                              <><Check className="w-3 h-3" /> İletildi</>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
