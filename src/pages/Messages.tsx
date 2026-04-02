@@ -80,13 +80,43 @@ export default function Messages() {
   };
 
   const fetchProfiles = async () => {
-    const { data } = await (supabase as any)
+    // Profileri çekiyoruz ve her birinin bize (şu anki kullanıcıya) 
+    // gönderdiği AMA bizim henüz okumadığımız bir mesaj var mı ona bakıyoruz.
+    const { data: profilesData } = await (supabase as any)
       .from("profiles")
       .select("id, full_name, role, last_seen_at")
       .neq("id", user?.id)
       .order("full_name");
-    setProfiles(data || []);
+
+    if (!profilesData) return;
+
+    // Okunmamış mesaj adetlerini/durumunu kontrol et
+    const { data: unreadData } = await (supabase as any)
+      .from("messages")
+      .select("sender_id")
+      .eq("receiver_id", user?.id)
+      .eq("is_read", false);
+
+    const profilesWithUnread = profilesData.map((p: any) => ({
+      ...p,
+      hasUnread: unreadData?.some((m: any) => m.sender_id === p.id)
+    }));
+
+    setProfiles(profilesWithUnread);
     setLoading(false);
+  };
+
+  const markAsRead = async (recipientId: string) => {
+    if (!user) return;
+    await (supabase as any)
+      .from("messages")
+      .update({ is_read: true })
+      .eq("receiver_id", user.id)
+      .eq("sender_id", recipientId)
+      .eq("is_read", false);
+    
+    // Okundu yapınca listeyi tazele
+    fetchProfiles();
   };
 
   const fetchMessages = async () => {
@@ -101,6 +131,9 @@ export default function Messages() {
       .order("created_at", { ascending: true });
 
     setMessages(data || []);
+    
+    // Sohbete girince okundu işaretle
+    markAsRead(selectedRecipient.id);
   };
 
   const subscribeToMessages = () => {
@@ -110,12 +143,18 @@ export default function Messages() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
-          const newMsg = payload.new as Message;
+          const newMsg = payload.new as any;
           if (
             (newMsg.sender_id === selectedRecipient?.id && newMsg.receiver_id === user?.id) ||
             (newMsg.sender_id === user?.id && newMsg.receiver_id === selectedRecipient?.id)
           ) {
             fetchMessages();
+          } else {
+            // Eğer o an sohbette değilsek ama bize mesaj gelmişse listeyi/noktayı tazele
+            if (newMsg.receiver_id === user?.id) {
+              fetchProfiles();
+              toast.info("Yeni bir mesajınız var!");
+            }
           }
         }
       )
@@ -185,9 +224,14 @@ export default function Messages() {
                     <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-[#12141c] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                   )}
                 </div>
-                <div className="text-left overflow-hidden">
-                  <p className="font-bold text-sm truncate">{profile.full_name}</p>
-                  <p className="text-[10px] opacity-50 uppercase tracking-widest">{profile.role}</p>
+                <div className="text-left overflow-hidden flex-1">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-sm truncate">{profile.full_name}</p>
+                    {(profile as any).hasUnread && (
+                      <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse" />
+                    )}
+                  </div>
+                  <p className="text-[10px] opacity-50 uppercase tracking-widest">{(profile as any).role}</p>
                 </div>
               </button>
             ))}
