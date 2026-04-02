@@ -111,29 +111,42 @@ export default function ReadBook() {
     setSaving(true);
     const nextPage = currentPage + 1;
     const total = numPages || book.total_pages;
-    const progressPercent = (nextPage / total) * 100;
+    // Sayısal güvenliği sağla (NaN'ı önle)
+    let progressPercent = 0;
+    if (total > 0) {
+      progressPercent = Number(((nextPage / total) * 100).toFixed(2));
+    }
+    if (isNaN(progressPercent)) progressPercent = 0;
 
     const now = Date.now();
     const timeSpentMs = now - startTime;
     const sessionMinutes = timeSpentMs / (1000 * 60);
 
     try {
-      const { error } = await supabase
+      const { error: upsertError } = await supabase
         .from("user_books")
         .upsert({
           user_id: user.id,
           book_id: book.id,
           current_page: nextPage,
           progress_percent: progressPercent,
-          total_minutes: totalMinutes + sessionMinutes,
+          total_minutes: Number(totalMinutes) + sessionMinutes,
           last_read_at: new Date().toISOString(),
           is_completed: nextPage >= total
-        });
+        }, { onConflict: 'user_id,book_id' });
 
-      if (error) throw error;
+      if (upsertError) {
+        console.error("Supabase Save Error:", upsertError);
+        toast.error(`Veritabanı Hatası: ${upsertError.message}`);
+        throw upsertError;
+      }
+      
       setCurrentPage(nextPage);
     } catch (error: any) {
-      toast.error("İlerleme kaydedilemedi");
+      console.error("Progress Save Failed:", error);
+      if (!error.message?.includes("Veritabanı")) {
+        toast.error(`İlerleme kaydedilemedi: ${error.message || "Bilinmeyen hata"}`);
+      }
     } finally {
       setSaving(false);
     }
