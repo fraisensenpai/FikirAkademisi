@@ -56,14 +56,50 @@ export default function Messages() {
 
   useEffect(() => {
     fetchProfiles();
-    let cleanup: any;
-    if (user) {
-      cleanup = subscribeToMessages();
-    }
-    return () => {
-      if (cleanup) cleanup();
-    };
   }, [user]);
+
+  // Abonelik sistemini daha uyanık hale getiriyoruz (özellikle mobil için)
+  useEffect(() => {
+    if (!user) return;
+    
+    const channelName = `mesaj-kanal-${user.id}-${selectedRecipient?.id || 'genel'}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newMsg = payload.new as any;
+            if (
+              (newMsg.sender_id === selectedRecipient?.id && newMsg.receiver_id === user?.id) ||
+              (newMsg.sender_id === user?.id && newMsg.receiver_id === selectedRecipient?.id)
+            ) {
+              fetchMessages();
+            } else {
+              if (newMsg.receiver_id === user?.id) {
+                fetchProfiles();
+                toast.info("Yeni bir mesajınız var!");
+              }
+            }
+          } else if (payload.eventType === "UPDATE") {
+            const updatedMsg = payload.new as any;
+            if (
+              updatedMsg.sender_id === user?.id && 
+              updatedMsg.receiver_id === selectedRecipient?.id && 
+              updatedMsg.is_read
+            ) {
+              fetchMessages();
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedRecipient?.id]);
 
   useEffect(() => {
     if (selectedRecipient) {
@@ -149,53 +185,6 @@ export default function Messages() {
     await markAsRead(selectedRecipient.id);
   };
 
-  const subscribeToMessages = () => {
-    const channel = supabase
-      .channel("messages-channel")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          const newMsg = payload.new as any;
-          const currentRecipient = selectedRecipientRef.current;
-          
-          if (
-            (newMsg.sender_id === currentRecipient?.id && newMsg.receiver_id === user?.id) ||
-            (newMsg.sender_id === user?.id && newMsg.receiver_id === currentRecipient?.id)
-          ) {
-            fetchMessages();
-          } else {
-            // Eğer o an sohbette değilsek ama bize mesaj gelmişse listeyi/noktayı tazele
-            if (newMsg.receiver_id === user?.id) {
-              fetchProfiles();
-              toast.info("Yeni bir mesajınız var!");
-            }
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages" },
-        (payload) => {
-          const updatedMsg = payload.new as any;
-          const currentRecipient = selectedRecipientRef.current;
-          
-          // Eğer şu an sohbet ettiğimiz kişi bizim ona attığımız bir mesajı OKUDUYSA (is_read: true olduysa)
-          if (
-            updatedMsg.sender_id === user?.id && 
-            updatedMsg.receiver_id === currentRecipient?.id && 
-            updatedMsg.is_read
-          ) {
-            fetchMessages();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
