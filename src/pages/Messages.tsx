@@ -12,6 +12,7 @@ interface Profile {
   id: string;
   full_name: string;
   role: string;
+  last_seen_at?: string;
 }
 
 interface Message {
@@ -35,6 +36,17 @@ export default function Messages() {
   const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Kendi aktifliğimizi güncelle
+  useEffect(() => {
+    if (!user) return;
+    const updatePresence = async () => {
+      await (supabase as any).from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id);
+    };
+    updatePresence();
+    const interval = setInterval(updatePresence, 1000 * 60 * 3); // 3 dakikada bir
+    return () => clearInterval(interval);
+  }, [user]);
+
   useEffect(() => {
     fetchProfiles();
     if (user) {
@@ -54,10 +66,23 @@ export default function Messages() {
     }
   }, [messages]);
 
+  // Her dakika profil listesini tazele (aktiflik ışıkları için)
+  useEffect(() => {
+    const profileInterval = setInterval(fetchProfiles, 1000 * 60);
+    return () => clearInterval(profileInterval);
+  }, []);
+
+  const isUserActive = (lastSeen?: string) => {
+    if (!lastSeen) return false;
+    const lastSeenDate = new Date(lastSeen).getTime();
+    const now = new Date().getTime();
+    return now - lastSeenDate < 1000 * 60 * 5; // Son 5 dakika
+  };
+
   const fetchProfiles = async () => {
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("profiles")
-      .select("id, full_name, role")
+      .select("id, full_name, role, last_seen_at")
       .neq("id", user?.id)
       .order("full_name");
     setProfiles(data || []);
@@ -152,9 +177,14 @@ export default function Messages() {
                     : "hover:bg-white/5 text-muted-foreground hover:text-white"
                 }`}
               >
-                <Avatar className="h-10 w-10 border-2 border-white/10">
-                  <AvatarFallback className="bg-secondary/20"><User className="w-5 h-5" /></AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-10 w-10 border-2 border-white/10">
+                    <AvatarFallback className="bg-secondary/20"><User className="w-5 h-5" /></AvatarFallback>
+                  </Avatar>
+                  {isUserActive(profile.last_seen_at) && (
+                    <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-[#12141c] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                  )}
+                </div>
                 <div className="text-left overflow-hidden">
                   <p className="font-bold text-sm truncate">{profile.full_name}</p>
                   <p className="text-[10px] opacity-50 uppercase tracking-widest">{profile.role}</p>
@@ -170,13 +200,22 @@ export default function Messages() {
         {selectedRecipient ? (
           <>
             {/* Header */}
-            <div className="p-6 border-b border-white/5 flex items-center gap-4 bg-background/80 backdrop-blur-md z-10">
-              <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-bold text-lg">{selectedRecipient.full_name}</h3>
-                <p className="text-xs text-emerald-500 font-medium">Şu an aktif</p>
+            <div className="p-6 border-b border-white/5 flex items-center gap-4 bg-background/80 backdrop-blur-md z-10 transition-colors">
+              <div className="relative">
+                <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                  <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
+                </Avatar>
+                {isUserActive(selectedRecipient.last_seen_at) && (
+                  <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-emerald-500 border-2 border-background rounded-full animate-pulse" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg text-foreground">{selectedRecipient.full_name}</h3>
+                {isUserActive(selectedRecipient.last_seen_at) ? (
+                  <p className="text-xs text-emerald-500 font-medium">Şu an aktif</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground opacity-70 uppercase tracking-widest font-bold">{selectedRecipient.role}</p>
+                )}
               </div>
             </div>
 
