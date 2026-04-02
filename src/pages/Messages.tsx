@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Send, Pin, BookOpen, User, Search, Trash2 } from "lucide-react";
+import { Send, Pin, BookOpen, User, Search, Trash2, ArrowLeft } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -151,7 +151,7 @@ export default function Messages() {
   return (
     <div className="flex h-[calc(100vh-8rem)] bg-background/50 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative">
       {/* Sidebar: Users List */}
-      <div className="w-80 border-r border-white/5 flex flex-col bg-muted/20">
+      <div className={`w-full md:w-80 border-r border-white/5 flex flex-col bg-muted/20 ${selectedRecipient ? "hidden md:flex" : "flex"}`}>
         <div className="p-6 border-b border-white/5">
           <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Mesajlar</h2>
           <div className="relative mt-4">
@@ -196,25 +196,35 @@ export default function Messages() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-transparent to-primary/5">
+      <div className={`flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-transparent to-primary/5 ${!selectedRecipient ? "hidden md:flex" : "flex animate-in slide-in-from-right duration-300"}`}>
         {selectedRecipient ? (
           <>
             {/* Header */}
-            <div className="p-6 border-b border-white/5 flex items-center gap-4 bg-background/80 backdrop-blur-md z-10 transition-colors">
+            <div className="p-4 md:p-6 border-b border-white/5 flex items-center gap-2 md:gap-4 bg-background/80 backdrop-blur-md z-10 transition-colors">
+              {/* Mobil Geri Butonu */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setSelectedRecipient(null)} 
+                className="md:hidden mr-1"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+
               <div className="relative">
-                <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+                <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-primary/20">
                   <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
                 </Avatar>
                 {isUserActive(selectedRecipient.last_seen_at) && (
-                  <div className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-emerald-500 border-2 border-background rounded-full animate-pulse" />
+                  <div className="absolute bottom-0 right-0 h-3 w-3 md:h-3.5 md:w-3.5 bg-emerald-500 border-2 border-background rounded-full animate-pulse" />
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg text-foreground">{selectedRecipient.full_name}</h3>
+                <h3 className="font-bold text-base md:text-lg text-foreground">{selectedRecipient.full_name}</h3>
                 {isUserActive(selectedRecipient.last_seen_at) ? (
-                  <p className="text-xs text-emerald-500 font-medium">Şu an aktif</p>
+                  <p className="text-[10px] md:text-xs text-emerald-500 font-medium">Şu an aktif</p>
                 ) : (
-                  <p className="text-xs text-muted-foreground opacity-70 uppercase tracking-widest font-bold">{selectedRecipient.role}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground opacity-70 uppercase tracking-widest font-bold">{selectedRecipient.role}</p>
                 )}
               </div>
             </div>
