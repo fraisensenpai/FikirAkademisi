@@ -36,6 +36,12 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const selectedRecipientRef = useRef<Profile | null>(null);
+
+  // Ref'i güncel tutalım (Stale closure hatasını önlemek için)
+  useEffect(() => {
+    selectedRecipientRef.current = selectedRecipient;
+  }, [selectedRecipient]);
 
   // Kendi aktifliğimizi güncelle
   useEffect(() => {
@@ -147,9 +153,11 @@ export default function Messages() {
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
           const newMsg = payload.new as any;
+          const currentRecipient = selectedRecipientRef.current;
+          
           if (
-            (newMsg.sender_id === selectedRecipient?.id && newMsg.receiver_id === user?.id) ||
-            (newMsg.sender_id === user?.id && newMsg.receiver_id === selectedRecipient?.id)
+            (newMsg.sender_id === currentRecipient?.id && newMsg.receiver_id === user?.id) ||
+            (newMsg.sender_id === user?.id && newMsg.receiver_id === currentRecipient?.id)
           ) {
             fetchMessages();
           } else {
@@ -166,10 +174,12 @@ export default function Messages() {
         { event: "UPDATE", schema: "public", table: "messages" },
         (payload) => {
           const updatedMsg = payload.new as any;
+          const currentRecipient = selectedRecipientRef.current;
+          
           // Eğer şu an sohbet ettiğimiz kişi bizim ona attığımız bir mesajı OKUDUYSA (is_read: true olduysa)
           if (
             updatedMsg.sender_id === user?.id && 
-            updatedMsg.receiver_id === selectedRecipient?.id && 
+            updatedMsg.receiver_id === currentRecipient?.id && 
             updatedMsg.is_read
           ) {
             fetchMessages();
