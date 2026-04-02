@@ -80,7 +80,7 @@ export function AppSidebar() {
               <BookOpen className="w-6 h-6 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-black text-lg tracking-tight text-foreground leading-none mb-1">Fikir Akademisi</span>
+              <span className="font-display font-black text-lg tracking-tight text-white leading-none mb-1">Fikir Akademisi</span>
               <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-secondary animate-pulse">M. Emin Saraç AİHL</span>
             </div>
           </div>

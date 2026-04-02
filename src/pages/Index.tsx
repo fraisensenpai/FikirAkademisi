@@ -30,7 +30,7 @@ export default function Index() {
               <BookMarked className="w-6 h-6 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
-              <span className="font-display font-extrabold text-xl tracking-tight text-foreground">Fikir Akademisi</span>
+              <span className="font-display font-extrabold text-xl tracking-tight text-white">Fikir Akademisi</span>
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-secondary leading-none">M. Emin Saraç AİHL</span>
             </div>
           </div>
