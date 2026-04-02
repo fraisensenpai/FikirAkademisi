@@ -107,7 +107,7 @@ export default function ReadBook() {
 
   const handleNextPage = async () => {
     if (!user || !book || (numPages && currentPage >= numPages)) return;
-    
+
     setSaving(true);
     const nextPage = currentPage + 1;
     const total = numPages || book.total_pages;
@@ -155,9 +155,9 @@ export default function ReadBook() {
       {/* Dynamic Header */}
       <div className="sticky top-0 w-full z-50 bg-[#0f1115]/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => navigate("/dashboard/books")}
             className="hover:bg-white/10 rounded-xl"
           >
@@ -190,8 +190,8 @@ export default function ReadBook() {
               </div>
             }
           >
-            <Page 
-              pageNumber={currentPage} 
+            <Page
+              pageNumber={currentPage}
               width={pageWidth}
               scale={scale}
               renderTextLayer={false}
@@ -212,13 +212,13 @@ export default function ReadBook() {
                   <span className="text-primary font-bold">{Math.round((currentPage / (numPages || 1)) * 100)}%</span>
                 </div>
                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all duration-1000" 
+                  <div
+                    className="h-full bg-primary transition-all duration-1000"
                     style={{ width: `${(currentPage / (numPages || 1)) * 100}%` }}
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
                   <DialogTrigger asChild>
@@ -249,8 +249,8 @@ export default function ReadBook() {
 
                       <div className="space-y-2 text-left">
                         <label className="text-xs font-bold uppercase opacity-40 ml-1 tracking-widest text-primary text-left block">ALINTI / NOTUN</label>
-                        <Textarea 
-                          placeholder="Bu kısım harikaydı, mutlaka okumalısın!..." 
+                        <Textarea
+                          placeholder="Bu kısım harikaydı, mutlaka okumalısın!..."
                           className="min-h-[100px] bg-white/5 border-white/10 rounded-2xl resize-none p-4 text-white"
                           value={quote}
                           onChange={(e) => setQuote(e.target.value)}
@@ -261,7 +261,7 @@ export default function ReadBook() {
                         </div>
                       </div>
 
-                      <Button 
+                      <Button
                         onClick={async () => {
                           if (!selectedRecipient || !quote.trim()) return toast.error("Kişi ve alıntı seçmelisiniz");
                           const { error } = await (supabase as any).from("messages").insert({
