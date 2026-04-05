@@ -45,7 +45,7 @@ export default function StudentDashboard() {
         .eq("user_id", user.id);
 
       if (error) {
-        toast.error("Veriler alınırken hata oluştu");
+        toast.error("Veriler alınırken hata oluştu: " + error.message);
       } else {
         setActiveBooks(data || []);
         
