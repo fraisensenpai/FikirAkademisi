@@ -21,8 +21,9 @@ import {
   LogOut,
   User,
   MessageSquare,
-  Sparkles,
   ChevronRight,
+  ArrowLeftRight,
+  ClipboardCheck,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -47,6 +48,7 @@ export function AppSidebar() {
     { title: "Kullanıcı Yönetimi", url: "/dashboard/users", icon: Users },
     { title: "Kitap Yönetimi", url: "/dashboard/manage-books", icon: BookOpen },
     { title: "Kitap İstekleri", url: "/dashboard/book-requests", icon: BookMarked },
+    { title: "Aktarım Talepleri", url: "/dashboard/manage-transfers", icon: ClipboardCheck },
     { title: "İstatistikler", url: "/dashboard/analytics", icon: BarChart3 },
     { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
   ];
@@ -55,6 +57,7 @@ export function AppSidebar() {
     { title: "Panel", url: "/dashboard", icon: LayoutDashboard },
     { title: "Ödev Atama", url: "/dashboard/assignments", icon: ClipboardList },
     { title: "Kitap İstekleri", url: "/dashboard/book-requests", icon: BookMarked },
+    { title: "Aktarım Talepleri", url: "/dashboard/manage-transfers", icon: ClipboardCheck },
     { title: "Raporlar", url: "/dashboard/analytics", icon: BarChart3 },
     { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
   ];
@@ -62,6 +65,7 @@ export function AppSidebar() {
   const studentItems = [
     { title: "Panel", url: "/dashboard", icon: LayoutDashboard },
     { title: "Kitaplarım", url: "/dashboard/books", icon: Library },
+    { title: "Kitap Aktarımı", url: "/dashboard/transfer", icon: ArrowLeftRight },
     { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
   ];
 

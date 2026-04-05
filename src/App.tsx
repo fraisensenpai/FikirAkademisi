@@ -17,6 +17,8 @@ import Books from "./pages/Books";
 import Messages from "./pages/Messages";
 import ReadBook from "./pages/ReadBook";
 import BookRequests from "./pages/BookRequests";
+import TransferProgress from "./pages/TransferProgress";
+import ManageTransfers from "./pages/ManageTransfers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +43,8 @@ const App = () => (
                 <Route path="books" element={<Books />} />
                 <Route path="read/:bookId" element={<ReadBook />} />
                 <Route path="book-requests" element={<BookRequests />} />
+                <Route path="transfer" element={<TransferProgress />} />
+                <Route path="manage-transfers" element={<ManageTransfers />} />
                 <Route path="messages" element={<Messages />} />
               </Route>
               <Route path="*" element={<NotFound />} />
