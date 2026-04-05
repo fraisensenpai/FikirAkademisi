@@ -40,7 +40,7 @@ export default function StudentDashboard() {
         .select(`
           id, book_id, current_page, progress_percent, total_minutes, 
           manual_pages_read, manual_minutes_read, is_completed,
-          book:books(title, description, total_pages, cover_url)
+          book:books(title, total_pages, cover_url)
         `)
         .eq("user_id", user.id);
 
