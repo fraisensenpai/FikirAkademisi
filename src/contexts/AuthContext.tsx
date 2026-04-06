@@ -12,6 +12,7 @@ interface Profile {
   school_number: string | null;
   class_name: string | null;
   last_device?: string | null;
+  color_theme?: string | null;
 }
 
 interface AuthContextType {
@@ -20,6 +21,7 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  updateColorTheme: (themeId: string) => Promise<void>;
 }
 
 const getDeviceInfo = () => {
@@ -32,12 +34,18 @@ const getDeviceInfo = () => {
   return "Mobil/Diğer Cihaz";
 };
 
+export const colorThemesList = [
+  "theme-zumrut", "theme-bogazici", "theme-lale", "theme-gece", 
+  "theme-akademi", "theme-kulliye", "theme-sahaf", "theme-okyanus"
+];
+
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   profile: null,
   loading: true,
   signOut: async () => {},
+  updateColorTheme: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -50,12 +58,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     // any cast kullanarak yeni sütun hatasını engelliyoruz
     const { data } = await (supabase.from("profiles") as any)
-      .select("id, full_name, role, school_number, class_name, last_device")
+      .select("id, full_name, role, school_number, class_name, last_device, color_theme")
       .eq("id", userId)
       .single();
     
     if (data) {
       setProfile(data as Profile);
+
+      // Tema Sınıfını DOM'a Yükle
+      if (data.color_theme) {
+        document.documentElement.classList.remove(...colorThemesList);
+        document.documentElement.classList.add(data.color_theme);
+      } else {
+        document.documentElement.classList.add("theme-zumrut");
+      }
 
       // Cihaz bilgisini güncelle (Arka planda sessizce yap)
       const currentDevice = getDeviceInfo();
@@ -65,6 +81,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("id", userId);
       }
     }
+  };
+
+  const updateColorTheme = async (themeId: string) => {
+    if (!session?.user) return;
+    
+    document.documentElement.classList.remove(...colorThemesList);
+    document.documentElement.classList.add(themeId);
+    
+    setProfile(prev => prev ? { ...prev, color_theme: themeId } : null);
+    
+    await (supabase.from("profiles") as any)
+      .update({ color_theme: themeId })
+      .eq("id", session.user.id);
   };
 
   useEffect(() => {
@@ -97,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, signOut, updateColorTheme }}>
       {children}
     </AuthContext.Provider>
   );

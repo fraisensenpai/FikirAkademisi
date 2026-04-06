@@ -78,6 +78,16 @@
     --sidebar-border: 222 60% 12%;
     --sidebar-ring: 160 59% 40%;
   }
+
+  /* --- Özel Renk Temaları (8 Adet) --- */
+  .theme-zumrut { --secondary: 160 59% 40%; }      /* Fikir Zümrüdü (Mevcut Orijinal Yeşil) */
+  .theme-bogazici { --secondary: 199 89% 48%; }    /* Boğaziçi Turkuazı */
+  .theme-lale { --secondary: 330 81% 60%; }        /* Lale Pembesi */
+  .theme-gece { --secondary: 262 83% 58%; }        /* Gece Mavisi (İndigo) */
+  .theme-akademi { --secondary: 348 83% 47%; }     /* Akademi Kırmızısı */
+  .theme-kulliye { --secondary: 43 96% 56%; }      /* Külliye Altını */
+  .theme-sahaf { --secondary: 25 50% 40%; }        /* Sahaf Kahvesi */
+  .theme-okyanus { --secondary: 217 91% 60%; }     /* Okyanus Derinliği */
 }
 
 @layer base {
