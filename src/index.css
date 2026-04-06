@@ -81,174 +81,190 @@
   
   /* --- TAM KAPSAMLI RENK TEMALARI (HER ŞEYİ DEĞİŞTİREN YAPI) --- */
 
-  /* --- TAM KAPSAMLI VE ÇOK RENKLİ DERİN TEMALAR --- */
+  /* --- TAM ATMOSFERİK RENKLİ TEMALAR (HER ŞEY TEMAYA GÖRE RENKLENİR) --- */
 
-  /* 1. Fikir Zümrüdü (Zengin Yeşil & Mavi Karışımı) */
+  /* 1. Fikir Zümrüdü (Zengin Yeşil) */
   .theme-zumrut {
-    --secondary: 160 59% 40%;
-    --accent: 160 59% 40%;
-    --accent-2: 199 89% 48%; /* Turkuaz ışıltı */
-    --ring: 160 59% 40%;
+    --secondary: 160 80% 45%;
+    --accent: 160 80% 45%;
+    --accent-2: 180 80% 50%;
+    --ring: 160 80% 45%;
   }
   .theme-zumrut:not(.dark) {
-    --background: 160 30% 96%;
-    --card: 160 20% 98%;
-    --sidebar-background: 160 60% 8%;
-    --primary: 160 60% 12%;
+    --background: 160 40% 92%; /* Belirgin Zümrüt Arka Plan */
+    --card: 160 30% 95%;
+    --sidebar-background: 160 100% 8%; 
+    --primary: 160 100% 12%;
+    --foreground: 160 100% 4%;
   }
   .theme-zumrut.dark {
-    --background: 160 40% 3%;
-    --card: 160 30% 5%;
-    --popover: 160 30% 5%;
-    --border: 160 30% 10%;
-    --sidebar-background: 160 50% 2%;
+    --background: 160 60% 5%; /* Çok Koyu Yeşil Gece */
+    --card: 160 40% 8%;
+    --popover: 160 40% 8%;
+    --border: 160 40% 15%;
+    --sidebar-background: 160 80% 2%;
+    --foreground: 160 20% 98%;
   }
 
-  /* 2. Boğaziçi Turkuazı (Canlı Turkuaz & Safir) */
+  /* 2. Boğaziçi Turkuazı (Canlı Turkuaz) */
   .theme-bogazici {
-    --secondary: 199 89% 48%;
-    --accent: 199 89% 48%;
-    --accent-2: 217 91% 60%; /* Safir Mavi ışıltı */
-    --ring: 199 89% 48%;
+    --secondary: 190 90% 48%;
+    --accent: 190 90% 48%;
+    --accent-2: 210 90% 55%;
+    --ring: 190 90% 48%;
   }
   .theme-bogazici:not(.dark) {
-    --background: 199 40% 96%;
-    --card: 199 30% 98%;
-    --primary: 199 89% 18%;
-    --sidebar-background: 199 89% 10%;
+    --background: 190 40% 92%; /* Turkuaz Gündüz */
+    --card: 190 30% 95%;
+    --primary: 190 90% 15%;
+    --sidebar-background: 190 100% 8%;
+    --foreground: 190 100% 4%;
   }
   .theme-bogazici.dark {
-    --background: 199 50% 4%;
-    --card: 199 40% 6%;
-    --popover: 199 40% 6%;
-    --border: 199 40% 12%;
-    --sidebar-background: 199 60% 2%;
+    --background: 190 60% 6%; /* Turkuaz Gece */
+    --card: 190 40% 9%;
+    --popover: 190 40% 9%;
+    --border: 190 40% 15%;
+    --sidebar-background: 190 80% 2%;
+    --foreground: 190 20% 98%;
   }
 
-  /* 3. Lale Pembesi (Zarif Pembe & Mor Karışımı) */
+  /* 3. Lale Pembesi (Canlı Pembe) */
   .theme-lale {
-    --secondary: 330 81% 60%;
-    --accent: 330 81% 60%;
-    --accent-2: 262 83% 58%; /* Mor İndigo ışıltı */
-    --ring: 330 81% 60%;
+    --secondary: 330 90% 60%;
+    --accent: 330 90% 60%;
+    --accent-2: 300 80% 55%;
+    --ring: 330 90% 60%;
   }
   .theme-lale:not(.dark) {
-    --background: 330 50% 96%;
-    --card: 330 40% 98%;
-    --primary: 330 81% 22%;
-    --sidebar-background: 330 81% 10%;
+    --background: 330 40% 93%; /* Pembe Gündüz */
+    --card: 330 30% 96%;
+    --primary: 330 90% 20%;
+    --sidebar-background: 330 100% 8%;
+    --foreground: 330 100% 4%;
   }
   .theme-lale.dark {
-    --background: 330 50% 4%;
-    --card: 330 40% 6%;
-    --popover: 330 40% 6%;
-    --border: 330 40% 12%;
-    --sidebar-background: 330 60% 2%;
+    --background: 330 60% 6%; /* Pembe Gece */
+    --card: 330 40% 10%;
+    --popover: 330 40% 10%;
+    --border: 330 40% 16%;
+    --sidebar-background: 330 80% 2%;
+    --foreground: 330 20% 98%;
   }
 
-  /* 4. Gece Mavisi (Derin Indigo & Lacivert) */
+  /* 4. Gece Mavisi (İndigo) */
   .theme-gece {
-    --secondary: 262 83% 58%;
-    --accent: 262 83% 58%;
-    --accent-2: 217 91% 60%; /* Okyanus Mavisi ışıltı */
-    --ring: 262 83% 58%;
+    --secondary: 255 85% 65%;
+    --accent: 255 85% 65%;
+    --accent-2: 240 90% 60%;
+    --ring: 255 85% 65%;
   }
   .theme-gece:not(.dark) {
-    --background: 262 40% 96%;
-    --card: 262 30% 98%;
-    --primary: 262 83% 18%;
-    --sidebar-background: 262 83% 8%;
+    --background: 255 40% 94%; /* İndigo Gündüz */
+    --card: 255 30% 97%;
+    --primary: 255 85% 20%;
+    --sidebar-background: 255 100% 8%;
+    --foreground: 255 100% 4%;
   }
   .theme-gece.dark {
-    --background: 262 50% 4%;
-    --card: 262 40% 6%;
-    --popover: 262 40% 6%;
-    --border: 262 40% 12%;
-    --sidebar-background: 262 60% 2%;
+    --background: 255 60% 6%; /* İndigo Gece */
+    --card: 255 40% 10%;
+    --popover: 255 40% 10%;
+    --border: 255 40% 18%;
+    --sidebar-background: 255 80% 2%;
+    --foreground: 255 20% 98%;
   }
 
-  /* 5. Akademi Kırmızısı (Kırmızı & Turuncu Karışımı) */
+  /* 5. Akademi Kırmızısı (Zarif Bordo) */
   .theme-akademi {
-    --secondary: 348 83% 47%;
-    --accent: 348 83% 47%;
-    --accent-2: 25 50% 40%; /* Toprak tonu ışıltısı */
-    --ring: 348 83% 47%;
+    --secondary: 355 85% 55%;
+    --accent: 355 85% 55%;
+    --accent-2: 15 90% 50%;
+    --ring: 355 85% 55%;
   }
   .theme-akademi:not(.dark) {
-    --background: 348 40% 96%;
-    --card: 348 30% 98%;
-    --primary: 348 83% 18%;
-    --sidebar-background: 348 83% 8%;
+    --background: 355 40% 93%; /* Kırmızı Gündüz */
+    --card: 355 30% 96%;
+    --primary: 355 85% 15%;
+    --sidebar-background: 355 100% 8%;
+    --foreground: 355 100% 4%;
   }
   .theme-akademi.dark {
-    --background: 348 50% 4%;
-    --card: 348 40% 6%;
-    --popover: 348 40% 6%;
-    --border: 348 40% 12%;
-    --sidebar-background: 348 60% 2%;
+    --background: 355 60% 6%; /* Kırmızı Gece */
+    --card: 355 40% 10%;
+    --popover: 355 40% 10%;
+    --border: 355 40% 18%;
+    --sidebar-background: 355 80% 2%;
+    --foreground: 355 20% 98%;
   }
 
-  /* 6. Külliye Altını (Sıcak Altın & Kehribar) */
+  /* 6. Külliye Altını (Sıcak Altın) */
   .theme-kulliye {
-    --secondary: 43 96% 56%;
-    --accent: 43 96% 56%;
-    --accent-2: 25 50% 40%; /* Kahverengi vurgu */
-    --ring: 43 96% 56%;
+    --secondary: 45 95% 50%;
+    --accent: 45 95% 50%;
+    --accent-2: 30 90% 45%;
+    --ring: 45 95% 50%;
   }
   .theme-kulliye:not(.dark) {
-    --background: 43 50% 95%;
-    --card: 43 40% 97%;
-    --primary: 43 83% 15%;
-    --sidebar-background: 43 90% 6%;
+    --background: 45 50% 92%; /* Altın Gündüz */
+    --card: 45 40% 95%;
+    --primary: 45 100% 15%;
+    --sidebar-background: 45 100% 6%;
+    --foreground: 45 100% 4%;
   }
   .theme-kulliye.dark {
-    --background: 43 40% 4%;
-    --card: 43 30% 6%;
-    --popover: 43 30% 6%;
-    --border: 43 30% 12%;
-    --sidebar-background: 43 50% 2%;
+    --background: 45 60% 5%; /* Altın Gece */
+    --card: 45 40% 8%;
+    --popover: 45 40% 8%;
+    --border: 45 40% 14%;
+    --sidebar-background: 45 80% 2%;
+    --foreground: 45 20% 98%;
   }
 
-  /* 7. Sahaf Kahvesi (Nostaljik Kahve & Krem) */
+  /* 7. Sahaf Kahvesi (Sepya) */
   .theme-sahaf {
-    --secondary: 25 50% 40%;
-    --accent: 25 50% 40%;
-    --accent-2: 43 96% 56%; /* Altın ışıltısı */
-    --ring: 25 50% 40%;
+    --secondary: 30 50% 45%;
+    --accent: 30 50% 45%;
+    --accent-2: 45 90% 50%;
+    --ring: 30 50% 45%;
   }
   .theme-sahaf:not(.dark) {
-    --background: 25 40% 94%;
-    --card: 25 30% 96%;
-    --primary: 25 50% 15%;
-    --sidebar-background: 25 60% 8%;
+    --background: 30 40% 90%; /* Kahve Gündüz */
+    --card: 30 30% 93%;
+    --primary: 30 100% 15%;
+    --sidebar-background: 30 100% 10%;
+    --foreground: 30 100% 4%;
   }
   .theme-sahaf.dark {
-    --background: 25 50% 4%;
-    --card: 25 40% 6%;
-    --popover: 25 40% 6%;
-    --border: 25 40% 12%;
-    --sidebar-background: 25 60% 2%;
+    --background: 30 60% 6%; /* Kahve Gece */
+    --card: 30 40% 10%;
+    --popover: 30 40% 10%;
+    --border: 30 40% 16%;
+    --sidebar-background: 30 80% 2%;
+    --foreground: 30 20% 98%;
   }
 
-  /* 8. Okyanus Derinliği (Parlak Mavi & Cam Göbeği) */
+  /* 8. Okyanus Derinliği (Safir) */
   .theme-okyanus {
-    --secondary: 217 91% 60%;
-    --accent: 217 91% 60%;
-    --accent-2: 199 89% 48%; /* Turkuaz ışıltı */
-    --ring: 217 91% 60%;
+    --secondary: 215 95% 55%;
+    --accent: 215 95% 55%;
+    --accent-2: 185 95% 50%;
+    --ring: 215 95% 55%;
   }
   .theme-okyanus:not(.dark) {
-    --background: 217 50% 96%;
-    --card: 217 40% 98%;
-    --primary: 217 83% 18%;
-    --sidebar-background: 217 83% 8%;
+    --background: 215 40% 92%; /* Mavi Gündüz */
+    --card: 215 30% 95%;
+    --primary: 215 100% 15%;
+    --sidebar-background: 215 100% 10%;
+    --foreground: 215 100% 4%;
   }
   .theme-okyanus.dark {
-    --background: 217 50% 4%;
-    --card: 217 40% 6%;
-    --popover: 217 40% 6%;
-    --border: 217 40% 12%;
-    --sidebar-background: 217 60% 2%;
+    --background: 215 60% 6%; /* Mavi Gece */
+    --card: 215 40% 10%;
+    --popover: 215 40% 10%;
+    --border: 215 35% 16%;
+    --sidebar-background: 215 80% 2%;
+    --foreground: 215 20% 98%;
   }
 }
 

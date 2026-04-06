@@ -55,8 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Tema Sınıfını DOM'a Yükle
+  const applyTheme = (themeId: string) => {
+    document.documentElement.classList.remove(...colorThemesList);
+    document.documentElement.classList.add(themeId);
+    localStorage.setItem("color-theme", themeId);
+  };
+
   const fetchProfile = async (userId: string) => {
-    // any cast kullanarak yeni sütun hatasını engelliyoruz
     const { data } = await (supabase.from("profiles") as any)
       .select("id, full_name, role, school_number, class_name, last_device, color_theme")
       .eq("id", userId)
@@ -65,15 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       setProfile(data as Profile);
 
-      // Tema Sınıfını DOM'a Yükle
       if (data.color_theme) {
-        document.documentElement.classList.remove(...colorThemesList);
-        document.documentElement.classList.add(data.color_theme);
-      } else {
-        document.documentElement.classList.add("theme-zumrut");
+        applyTheme(data.color_theme);
       }
 
-      // Cihaz bilgisini güncelle (Arka planda sessizce yap)
       const currentDevice = getDeviceInfo();
       if (data.last_device !== currentDevice) {
         await (supabase.from("profiles") as any)
@@ -84,19 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateColorTheme = async (themeId: string) => {
-    if (!session?.user) return;
+    applyTheme(themeId);
     
-    document.documentElement.classList.remove(...colorThemesList);
-    document.documentElement.classList.add(themeId);
-    
-    setProfile(prev => prev ? { ...prev, color_theme: themeId } : null);
-    
-    await (supabase.from("profiles") as any)
-      .update({ color_theme: themeId })
-      .eq("id", session.user.id);
+    if (session?.user) {
+      setProfile(prev => prev ? { ...prev, color_theme: themeId } : null);
+      await (supabase.from("profiles") as any)
+        .update({ color_theme: themeId })
+        .eq("id", session.user.id);
+    }
   };
 
   useEffect(() => {
+    // İlk Yüklemede LocalStorage Temasını Uygula
+    const savedTheme = localStorage.getItem("color-theme") || "theme-zumrut";
+    applyTheme(savedTheme);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
