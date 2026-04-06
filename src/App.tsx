@@ -21,6 +21,8 @@ import TransferProgress from "./pages/TransferProgress";
 import ManageTransfers from "./pages/ManageTransfers";
 import NotFound from "./pages/NotFound";
 
+import ResetPassword from "./pages/ResetPassword";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -34,6 +36,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="users" element={<UserManagement />} />
