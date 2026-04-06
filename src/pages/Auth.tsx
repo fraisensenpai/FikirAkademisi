@@ -10,6 +10,7 @@ import { BookOpen, Mail, Lock, User, Hash, GraduationCap, Sparkles, ArrowRight, 
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,9 +25,38 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (isResetPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + "/reset-password",
+        });
         if (error) throw error;
+        toast.success("Şifre sıfırlama bağlantısı e-posta adresinize gönderildi!");
+        setIsResetPassword(false);
+        setIsLogin(true);
+      } else if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          if (error.message.includes("Email not confirmed")) {
+            throw new Error("Lütfen e-posta adresinizi doğrulayın.");
+          }
+          throw error;
+        }
+
+        // Check if teacher is approved
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            // Using '*' as we might not have is_approved in the types yet
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profile?.role === 'teacher' && (profile as any)?.is_approved === false) {
+            await supabase.auth.signOut();
+            throw new Error("Hesabınız yetkililer tarafından henüz onaylanmadı. Lütfen bekleyiniz.");
+          }
+        }
+
         toast.success("Giriş başarılı! Hoş geldiniz.");
         navigate("/dashboard");
       } else {
@@ -44,7 +74,7 @@ export default function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Kayıt başarılı! Şimdi giriş yapabilirsiniz.");
+        toast.success("Kayıt başarılı! Lütfen e-posta adresinize gelen doğrulama bağlantısına tıklayın.");
         setIsLogin(true);
       }
     } catch (error: any) {
@@ -83,18 +113,22 @@ export default function AuthPage() {
           <div className="mb-8 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-primary text-[10px] font-bold mb-4 uppercase tracking-widest">
               <Sparkles className="w-3 h-3" />
-              <span>Güvenli {isLogin ? "Giriş" : "Kayıt"}</span>
+              <span>Güvenli {isResetPassword ? "Kurtarma" : isLogin ? "Giriş" : "Kayıt"}</span>
             </div>
             <h2 className="text-2xl font-bold text-foreground">
-              {isLogin ? "Tekrar Hoş Geldiniz" : "Kütüphanemize Katılın"}
+              {isResetPassword ? "Şifrenizi Sıfırlayın" : isLogin ? "Tekrar Hoş Geldiniz" : "Kütüphanemize Katılın"}
             </h2>
             <p className="text-sm text-muted-foreground/70 mt-2 font-medium">
-              {isLogin ? "Bilgilerinizi girerek kaldığınız yerden devam edin." : "Yeni bir hesap oluşturarak okumaya başlayın."}
+              {isResetPassword 
+                ? "Kayıtlı e-posta adresinizi girin, sıfırlama linki gönderelim."
+                : isLogin 
+                  ? "Bilgilerinizi girerek kaldığınız yerden devam edin." 
+                  : "Yeni bir hesap oluşturarak okumaya başlayın."}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {!isLogin && (
+            {!isLogin && !isResetPassword && (
               <div className="space-y-5 animate-fade-in">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 ml-1">Hesap Türü</Label>
@@ -174,22 +208,35 @@ export default function AuthPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 ml-1">Şifre</Label>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="pl-11 h-12 rounded-2xl bg-background/50 border-white/10 focus:ring-2 ring-primary/20 transition-all shadow-sm"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
+            {!isResetPassword && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-1">
+                  <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Şifre</Label>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => setIsResetPassword(true)}
+                      className="text-xs font-bold text-primary hover:underline underline-offset-4"
+                    >
+                      Şifremi Unuttum?
+                    </button>
+                  )}
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-11 h-12 rounded-2xl bg-background/50 border-white/10 focus:ring-2 ring-primary/20 transition-all shadow-sm"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required={!isResetPassword}
+                    minLength={6}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <Button
               type="submit"
@@ -203,22 +250,35 @@ export default function AuthPage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span>{isLogin ? "Giriş Yap" : "Kayıt Ol"}</span>
+                  <span>{isResetPassword ? "Sıfırlama Linki Gönder" : isLogin ? "Giriş Yap" : "Kayıt Ol"}</span>
                   <ArrowRight className="w-5 h-5 opacity-50" />
                 </div>
               )}
             </Button>
           </form>
 
-          <p className="mt-8 pt-6 border-t border-white/5 text-center text-sm font-medium text-muted-foreground">
-            {isLogin ? "Bir hesabınız yok mu? " : "Zaten üye misiniz? "}
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary font-bold hover:underline underline-offset-4 decoration-2 transition-all ml-1"
-            >
-              {isLogin ? "Hemen Katılın" : "Giriş Yapın"}
-            </button>
-          </p>
+          <div className="mt-8 pt-6 border-t border-white/5 text-center text-sm font-medium text-muted-foreground flex flex-col gap-2">
+            <p>
+              {isLogin && !isResetPassword ? "Bir hesabınız yok mu? " : "Zaten üye misiniz? "}
+              <button
+                onClick={() => {
+                  setIsResetPassword(false);
+                  setIsLogin(!isLogin);
+                }}
+                className="text-primary font-bold hover:underline underline-offset-4 decoration-2 transition-all ml-1"
+              >
+                {isLogin && !isResetPassword ? "Hemen Katılın" : "Giriş Yapın"}
+              </button>
+            </p>
+            {isResetPassword && <p>
+              <button
+                onClick={() => setIsResetPassword(false)}
+                className="text-muted-foreground hover:text-foreground transition-all ml-1"
+              >
+                Giriş ekranına dön
+              </button>
+            </p>}
+          </div>
         </div>
       </div>
     </div>
