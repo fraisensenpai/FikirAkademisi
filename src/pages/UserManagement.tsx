@@ -18,6 +18,7 @@ interface UserProfile {
   school_number: string | null;
   class_name: string | null;
   last_device?: string | null;
+  is_approved?: boolean;
 }
 
 export default function UserManagement() {
@@ -49,6 +50,20 @@ export default function UserManagement() {
     }
     toast.success("Rol güncellendi");
     setEditingId(null);
+    fetchUsers();
+  };
+
+  const handleApprovalChange = async (userId: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_approved: !currentStatus } as any)
+      .eq("id", userId);
+    
+    if (error) {
+      toast.error("Onay durumu güncellenemedi!");
+      return;
+    }
+    toast.success(!currentStatus ? "Öğretmen hesabı onaylandı!" : "Öğretmen onayı kaldırıldı.");
     fetchUsers();
   };
 
@@ -103,8 +118,8 @@ export default function UserManagement() {
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Ad Soyad</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Okul No</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Sınıf</th>
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Cihaz</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">Rol</th>
+                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Durum</th>
                 <th className="text-left p-3 text-sm font-medium text-muted-foreground">İşlem</th>
               </tr>
             </thead>
@@ -114,11 +129,6 @@ export default function UserManagement() {
                   <td className="p-3 font-medium text-foreground">{u.full_name || "—"}</td>
                   <td className="p-3 text-muted-foreground">{u.school_number || "—"}</td>
                   <td className="p-3 text-muted-foreground">{u.class_name || "—"}</td>
-                  <td className="p-3">
-                    <span className="text-xs bg-muted p-1 px-2 rounded border border-border/50 text-muted-foreground">
-                      {u.last_device || "Bilinmiyor"}
-                    </span>
-                  </td>
                   <td className="p-3">
                     {editingId === u.id ? (
                       <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
@@ -136,6 +146,20 @@ export default function UserManagement() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleBadgeColors[u.role]}`}>
                         {roleLabels[u.role]}
                       </span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {u.role === "teacher" ? (
+                      <Button 
+                        size="sm" 
+                        variant={(u as any).is_approved ? "outline" : "destructive"} 
+                        className="h-7 text-[10px] uppercase font-bold tracking-widest"
+                        onClick={() => handleApprovalChange(u.id, (u as any).is_approved)}
+                      >
+                        {(u as any).is_approved ? "Onaylı" : "Onay Bekliyor"}
+                      </Button>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest font-bold">Gerekmez</span>
                     )}
                   </td>
                   <td className="p-3">
