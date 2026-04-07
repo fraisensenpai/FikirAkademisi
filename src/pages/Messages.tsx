@@ -146,8 +146,17 @@ export default function Messages() {
   };
 
   const fetchGroupMembers = async (groupId: string) => {
-    const { data } = await supabase.from("group_members").select("profiles(id, full_name, role)").eq("group_id", groupId);
-    setGroupMembers(data?.map((d: any) => d.profiles) || []);
+    try {
+      const { data, error } = await supabase
+        .from("group_members")
+        .select("profiles(id, full_name, role)")
+        .eq("group_id", groupId);
+      
+      if (error) console.error("Grup Üyeleri Hatası:", error);
+      else setGroupMembers(data?.map((d: any) => d.profiles).filter(Boolean) || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchMessages = async () => {
