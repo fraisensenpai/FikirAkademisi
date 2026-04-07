@@ -19,6 +19,7 @@ import ReadBook from "./pages/ReadBook";
 import BookRequests from "./pages/BookRequests";
 import TransferProgress from "./pages/TransferProgress";
 import ManageTransfers from "./pages/ManageTransfers";
+import ManageGroups from "./pages/ManageGroups";
 import NotFound from "./pages/NotFound";
 
 import ResetPassword from "./pages/ResetPassword";
@@ -48,6 +49,7 @@ const App = () => (
                 <Route path="book-requests" element={<BookRequests />} />
                 <Route path="transfer" element={<TransferProgress />} />
                 <Route path="manage-transfers" element={<ManageTransfers />} />
+                <Route path="groups" element={<ManageGroups />} />
                 <Route path="messages" element={<Messages />} />
               </Route>
               <Route path="*" element={<NotFound />} />

@@ -45,7 +45,8 @@ export function AppSidebar() {
 
   const adminItems = [
     { title: "Giriş", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Kullanıcı Yönetimi", url: "/dashboard/users", icon: Users },
+    { title: "Kullanıcı Yönetimi", url: "/dashboard/users", icon: User },
+    { title: "Grup Yönetimi", url: "/dashboard/groups", icon: Users },
     { title: "Kitap Yönetimi", url: "/dashboard/manage-books", icon: BookOpen },
     { title: "Kitap İstekleri", url: "/dashboard/book-requests", icon: BookMarked },
     { title: "Aktarım Talepleri", url: "/dashboard/manage-transfers", icon: ClipboardCheck },
@@ -56,6 +57,7 @@ export function AppSidebar() {
   const teacherItems = [
     { title: "Panel", url: "/dashboard", icon: LayoutDashboard },
     { title: "Ödev Atama", url: "/dashboard/assignments", icon: ClipboardList },
+    { title: "Grup Yönetimi", url: "/dashboard/groups", icon: Users },
     { title: "Kitap İstekleri", url: "/dashboard/book-requests", icon: BookMarked },
     { title: "Aktarım Talepleri", url: "/dashboard/manage-transfers", icon: ClipboardCheck },
     { title: "Raporlar", url: "/dashboard/analytics", icon: BarChart3 },

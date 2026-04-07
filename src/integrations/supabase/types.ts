@@ -16,25 +16,37 @@ export type Database = {
     Tables: {
       assignments: {
         Row: {
-          book_id: string
+          book_id: string | null
+          movie_id: string | null
+          target_student_id: string | null
+          target_group_id: string | null
           created_at: string
           id: string
-          target_class: string
+          target_class: string | null
           teacher_id: string
+          due_date: string | null
         }
         Insert: {
-          book_id: string
+          book_id?: string | null
+          movie_id?: string | null
+          target_student_id?: string | null
+          target_group_id?: string | null
           created_at?: string
           id?: string
-          target_class: string
+          target_class?: string | null
           teacher_id: string
+          due_date?: string | null
         }
         Update: {
-          book_id?: string
+          book_id?: string | null
+          movie_id?: string | null
+          target_student_id?: string | null
+          target_group_id?: string | null
           created_at?: string
           id?: string
-          target_class?: string
+          target_class?: string | null
           teacher_id?: string
+          due_date?: string | null
         }
         Relationships: [
           {
@@ -42,6 +54,27 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_movie_id_fkey"
+            columns: ["movie_id"]
+            isOneToOne: false
+            referencedRelation: "movies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_target_student_id_fkey"
+            columns: ["target_student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_target_group_id_fkey"
+            columns: ["target_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
             referencedColumns: ["id"]
           },
         ]
@@ -79,6 +112,80 @@ export type Database = {
           title?: string
           total_pages?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      groups: {
+        Row: {
+          id: string
+          name: string
+          teacher_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          teacher_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          teacher_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      movies: {
+        Row: {
+          id: string
+          title: string
+          url: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          url: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          url?: string
+          created_by?: string | null
+          created_at?: string
         }
         Relationships: []
       }
