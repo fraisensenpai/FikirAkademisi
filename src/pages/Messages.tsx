@@ -112,9 +112,14 @@ export default function Messages() {
   };
 
   const fetchItems = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log("fetchItems: Kullanıcı bulunamadı, bekleniyor...");
+      return;
+    }
+    
     try {
       setLoading(true);
+      console.log("fetchItems: Veriler çekiliyor... Kullanıcı ID:", user.id);
       
       // 1. Profil bilgilerini çek
       const { data: profilesData, error: profError } = await (supabase as any)
@@ -122,26 +127,42 @@ export default function Messages() {
         .select("id, full_name, role, last_seen_at")
         .neq("id", user.id);
 
-      if (profError) throw profError;
-      console.log("Profiller yüklendi:", profilesData?.length || 0);
+      if (profError) {
+        console.error("fetchItems: Profil çekme hatası:", profError);
+        throw profError;
+      }
+      console.log("fetchItems: Profiller başarıyla çekildi. Sayı:", profilesData?.length || 0);
 
       // 2. Kullanıcının üye olduğu grupları çek
-      const { data: myGroups, error: grpError } = await (supabase as any)
-        .from("group_members")
-        .select("group_id, groups(id, name)")
-        .eq("user_id", user.id);
+      let groupItems: any[] = [];
+      try {
+        const { data: myGroups, error: grpError } = await (supabase as any)
+          .from("group_members")
+          .select(`
+            group_id,
+            groups (
+              id,
+              name
+            )
+          `)
+          .eq("user_id", user.id);
 
-      if (grpError) throw grpError;
-      console.log("Gruplar yüklendi:", myGroups?.length || 0);
+        if (grpError) {
+          console.warn("fetchItems: Grup üyeliği uyarısı (Önemli değil):", grpError);
+        } else {
+          groupItems = myGroups?.filter((g: any) => g.groups).map((g: any) => ({
+            id: g.groups.id,
+            full_name: (g.groups.name as string).toUpperCase(),
+            role: "GRUP",
+            isGroup: true
+          })) || [];
+        }
+      } catch (ge) {
+        console.warn("fetchItems: Grup çekme işlem hatası:", ge);
+      }
+      console.log("fetchItems: Gruplar hazırlandı. Sayı:", groupItems.length);
 
-      const groupItems = myGroups?.map((g: any) => ({
-        id: g.groups.id,
-        full_name: (g.groups.name as string).toUpperCase(),
-        role: "GRUP",
-        isGroup: true
-      })) || [];
-
-      // 3. Mesaj geçmişini çek (Okunmadı ve sıralama için)
+      // 3. Mesaj geçmişini çek (Sıralama için)
       let lastMessages: any[] = [];
       try {
         const groupIds = groupItems.map(g => g.id);
@@ -155,12 +176,12 @@ export default function Messages() {
 
         const { data, error: msgError } = await query.order("created_at", { ascending: false });
         if (!msgError) lastMessages = data || [];
-        else console.warn("Mesaj geçmişi yüklenemedi (Sıralama varsayılan olacak):", msgError);
+        else console.warn("fetchItems: Mesaj geçmişi yüklenemedi:", msgError);
       } catch (e) {
-        console.warn("Mesaj geçmişi sorgu hatası:", e);
+        console.warn("fetchItems: Mesaj geçmişi sorgu hatası:", e);
       }
 
-      console.log("Listeniz hazırlanıyor...");
+      console.log("fetchItems: Liste birleştiriliyor...");
       const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
         const lastMsg = lastMessages?.find((m: any) => 
           p.isGroup 
@@ -177,10 +198,11 @@ export default function Messages() {
         };
       });
 
+      console.log("fetchItems: Liste güncellendi. Toplam öğe:", allItems.length);
       setItems(allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0)));
     } catch (err) {
-      console.error("fetchItems Genel Hatası:", err);
-      toast.error("Bağlantı hatası: Sayfayı yenileyin");
+      console.error("fetchItems KRİTİK HATASI:", err);
+      toast.error("Bağlantı hatası: Konsolu (F12) kontrol edin");
     } finally {
       setLoading(false);
     }
