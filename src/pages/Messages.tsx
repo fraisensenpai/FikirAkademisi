@@ -127,30 +127,72 @@ export default function Messages() {
   };
 
   const fetchProfiles = async () => {
-    // Profileri çekiyoruz ve her birinin bize (şu anki kullanıcıya) 
-    // gönderdiği AMA bizim henüz okumadığımız bir mesaj var mı ona bakıyoruz.
+    if (!user) return;
+    
+    setLoading(true);
+    // 1. Tüm profilleri çek
     const { data: profilesData } = await (supabase as any)
       .from("profiles")
       .select("id, full_name, role, last_seen_at")
-      .neq("id", user?.id)
-      .order("full_name");
+      .neq("id", user.id);
 
-    if (!profilesData) return;
+    if (!profilesData) {
+      setLoading(false);
+      return;
+    }
 
-    // Okunmamış mesaj adetlerini/durumunu kontrol et
-    const { data: unreadData } = await (supabase as any)
+    // 2. Mesaj geçmişini çek (Sıralama için son mesaj tarihlerini bulacağız)
+    const { data: lastMessages } = await (supabase as any)
       .from("messages")
-      .select("sender_id")
-      .eq("receiver_id", user?.id)
-      .eq("is_read", false);
+      .select("sender_id, receiver_id, created_at, is_read")
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .order("created_at", { ascending: false });
 
-    const profilesWithUnread = profilesData.map((p: any) => ({
-      ...p,
-      hasUnread: unreadData?.some((m: any) => m.sender_id === p.id)
-    }));
+    // En son mesaj tarihini her profil için eşleştirelim
+    const profilesWithUnreadAndSort = profilesData.map((p: any) => {
+      const lastMsg = lastMessages?.find((m: any) => 
+        (m.sender_id === p.id && m.receiver_id === user.id) || 
+        (m.sender_id === user.id && m.receiver_id === p.id)
+      );
+      
+      const hasUnread = lastMessages?.some((m: any) => 
+        m.sender_id === p.id && m.receiver_id === user.id && !m.is_read
+      );
 
-    setProfiles(profilesWithUnread);
+      return {
+        ...p,
+        lastMessageAt: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
+        hasUnread: hasUnread
+      };
+    });
+
+    // Mesajlaşma tarihine göre (en yeni en üstte) veya isme göre sırala
+    const sortedProfiles = [...profilesWithUnreadAndSort].sort((a, b) => {
+      // Eğer ikisi de mesajlaşmışsa tarihe göre
+      if (b.lastMessageAt !== a.lastMessageAt) {
+        return b.lastMessageAt - a.lastMessageAt;
+      }
+      // Mesaj yoksa isme göre
+      return a.full_name.localeCompare(b.full_name);
+    });
+
+    setProfiles(sortedProfiles);
     setLoading(false);
+  };
+
+  const deleteMessage = async (msgId: string) => {
+    const { error } = await (supabase as any)
+      .from("messages")
+      .delete()
+      .eq("id", msgId)
+      .eq("sender_id", user?.id); // Sadece kendi mesajını silebilir
+
+    if (error) {
+      toast.error("Mesaj silinemedi");
+    } else {
+      setMessages(prev => prev.filter(m => m.id !== msgId));
+      toast.success("Mesaj silindi");
+    }
   };
 
   const markAsRead = async (recipientId: string) => {
@@ -163,7 +205,6 @@ export default function Messages() {
       .eq("is_read", false);
     
     if (!error) {
-      // Sadece başarı durumunda listeyi tazele
       fetchProfiles();
     }
   };
@@ -201,6 +242,7 @@ export default function Messages() {
     } else {
       setNewMessage("");
       fetchMessages();
+      fetchProfiles(); // Listeyi en üste almak için tazele
     }
   };
 
@@ -306,12 +348,12 @@ export default function Messages() {
                 {messages.map((msg) => (
                   <div 
                     key={msg.id} 
-                    className={`flex flex-col ${msg.sender_id === user?.id ? "items-end" : "items-start"}`}
+                    className={`flex flex-col group ${msg.sender_id === user?.id ? "items-end" : "items-start"}`}
                   >
-                    <div className={`max-w-[80%] space-y-2`}>
+                    <div className={`max-w-[80%] space-y-1 relative`}>
                       {/* Quote Box (If exists) */}
                       {msg.quoted_text && (
-                        <div className="bg-muted/40 p-4 rounded-2xl border-l-4 border-primary text-sm italic backdrop-blur-sm shadow-inner group">
+                        <div className="bg-muted/40 p-4 rounded-2xl border-l-4 border-primary text-sm italic backdrop-blur-sm shadow-inner mb-1">
                           <div className="flex items-center gap-2 mb-2 text-[10px] uppercase font-bold text-primary opacity-70">
                             <BookOpen className="w-3 h-3" />
                             {msg.book?.title} - Sayfa {msg.page_number}
@@ -320,17 +362,29 @@ export default function Messages() {
                         </div>
                       )}
                       
-                      {/* Text Bubble */}
-                      <div className={`p-4 rounded-2xl shadow-xl ${
-                        msg.sender_id === user?.id 
-                          ? "bg-primary text-primary-foreground rounded-tr-none" 
-                          : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"
-                      }`}>
-                        <p className="text-sm font-medium">{msg.content}</p>
+                      <div className="flex items-end gap-2">
+                        {msg.sender_id === user?.id && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => deleteMessage(msg.id)}
+                            className="h-6 w-6 opacity-0 group-hover:opacity-50 hover:opacity-100 hover:text-rose-500 transition-all rounded-full"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+
+                        <div className={`p-4 rounded-2xl shadow-xl ${
+                          msg.sender_id === user?.id 
+                            ? "bg-primary text-primary-foreground rounded-tr-none" 
+                            : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"
+                        }`}>
+                          <p className="text-sm font-medium whitespace-pre-wrap">{msg.content}</p>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center justify-end gap-1 px-2">
-                        <span className="text-[10px] opacity-30 font-mono">
+                      <div className="flex items-center justify-end gap-1 px-1">
+                        <span className="text-[9px] opacity-30 font-mono">
                           {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         {msg.sender_id === user?.id && (
