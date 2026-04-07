@@ -41,6 +41,7 @@ export default function ManageGroups() {
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedClass, setSelectedClass] = useState<string>("all");
 
   const fetchGroups = async () => {
     const { data, error } = await supabase
@@ -144,13 +145,16 @@ export default function ManageGroups() {
     }
   };
 
-  const filteredStudents = students.filter(s => 
-    s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (s.school_number && s.school_number.includes(searchTerm)) ||
-    (s.class_name && s.class_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  ).slice(0, 15);
+  const classes = Array.from(new Set(students.map(s => s.class_name).filter(Boolean))).sort();
 
-  if (loading) return <div className="flex items-center justify-center h-64">Yükleniyor...</div>;
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         (s.school_number && s.school_number.includes(searchTerm));
+    const matchesClass = selectedClass === "all" || s.class_name === selectedClass;
+    return matchesSearch && matchesClass;
+  }).slice(0, 20);
+
+  if (loading) return <div className="flex items-center justify-center h-64 font-display italic opacity-50">Kayıtlar Hazırlanıyor...</div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -238,19 +242,32 @@ export default function ManageGroups() {
                       <span>Üye Ekle</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="rounded-3xl border-white/10 glass-premium">
+                  <DialogContent className="rounded-3xl border-white/10 glass-premium max-w-lg">
                     <DialogHeader>
-                      <DialogTitle className="text-xl font-black">Öğrenci Ekle</DialogTitle>
+                      <DialogTitle className="text-xl font-black">Öğrenci Seç</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input 
-                          placeholder="İsim veya numara ile ara..." 
-                          className="pl-10 rounded-xl"
-                          value={searchTerm}
-                          onChange={e => setSearchTerm(e.target.value)}
-                        />
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="İsim veya numara ile ara..." 
+                            className="pl-10 rounded-xl bg-white/5"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                          />
+                        </div>
+                        <Select value={selectedClass} onValueChange={setSelectedClass}>
+                          <SelectTrigger className="w-[140px] rounded-xl bg-white/5">
+                            <SelectValue placeholder="Sınıf Seç" />
+                          </SelectTrigger>
+                          <SelectContent className="glass-premium rounded-xl">
+                            <SelectItem value="all">Sınıf: Tümü</SelectItem>
+                            {classes.map(c => (
+                              <SelectItem key={c} value={c}>{c}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                         {filteredStudents.map(s => (
