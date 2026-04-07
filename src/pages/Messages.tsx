@@ -136,29 +136,33 @@ export default function Messages() {
       // 2. Kullanıcının üye olduğu grupları çek
       let groupItems: any[] = [];
       try {
+        console.log("fetchItems: Adım 2 - Gruplar çekiliyor...");
+        // Join sorgusunu en sade hale getirelim veya ayırarak çekelim
         const { data: myGroups, error: grpError } = await (supabase as any)
           .from("group_members")
-          .select(`
-            group_id,
-            groups (
-              id,
-              name
-            )
-          `)
+          .select("group_id")
           .eq("user_id", user.id);
 
         if (grpError) {
-          console.warn("fetchItems: Grup üyeliği uyarısı (Önemli değil):", grpError);
-        } else {
-          groupItems = myGroups?.filter((g: any) => g.groups).map((g: any) => ({
-            id: g.groups.id,
-            full_name: (g.groups.name as string).toUpperCase(),
-            role: "GRUP",
-            isGroup: true
-          })) || [];
+          console.warn("fetchItems: Grup üyeliği uyarısı:", grpError);
+        } else if (myGroups && myGroups.length > 0) {
+          const gIds = myGroups.map((g: any) => g.group_id);
+          const { data: groupNames, error: gnError } = await (supabase as any)
+            .from("groups")
+            .select("id, name")
+            .in("id", gIds);
+
+          if (!gnError && groupNames) {
+            groupItems = groupNames.map((g: any) => ({
+              id: g.id,
+              full_name: (g.name as string).toUpperCase(),
+              role: "GRUP",
+              isGroup: true
+            }));
+          }
         }
       } catch (ge) {
-        console.warn("fetchItems: Grup çekme işlem hatası:", ge);
+        console.warn("fetchItems: Grup çekme işlem hatası (Geçiliyor):", ge);
       }
       console.log("fetchItems: Gruplar hazırlandı. Sayı:", groupItems.length);
 
