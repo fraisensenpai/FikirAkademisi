@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Send, BookOpen, User, Search, Trash2, ArrowLeft, Check, CheckCheck, Smile } from "lucide-react";
+import { Send, BookOpen, User, Users, Search, Trash2, ArrowLeft, Check, CheckCheck, Smile } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Profile {
@@ -16,6 +16,7 @@ interface Profile {
   last_seen_at?: string;
   hasUnread?: boolean;
   lastMessageAt?: number;
+  isGroup?: boolean;
 }
 
 interface Reaction {
@@ -27,7 +28,8 @@ interface Reaction {
 interface Message {
   id: string;
   sender_id: string;
-  receiver_id: string;
+  receiver_id?: string;
+  group_id?: string;
   content: string;
   created_at: string;
   is_read: boolean;
@@ -35,13 +37,14 @@ interface Message {
   page_number?: number;
   book?: { title: string };
   message_reactions?: Reaction[];
+  sender?: { full_name: string };
 }
 
 const COMMON_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
 
 export default function Messages() {
   const { user } = useAuth();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [items, setItems] = useState<Profile[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -61,13 +64,12 @@ export default function Messages() {
   }, [user]);
 
   useEffect(() => {
-    fetchProfiles();
+    fetchItems();
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
     
-    // Custom logic to refresh on message changes
     const channel = supabase
       .channel("messages-realtime")
       .on(
@@ -75,7 +77,7 @@ export default function Messages() {
         { event: "*", schema: "public", table: "messages" },
         () => {
           fetchMessages();
-          fetchProfiles();
+          fetchItems();
         }
       )
       .on(
@@ -108,7 +110,7 @@ export default function Messages() {
     return new Date().getTime() - lastSeenDate < 1000 * 60 * 5;
   };
 
-  const fetchProfiles = async () => {
+  const fetchItems = async () => {
     if (!user) return;
     setLoading(true);
     
@@ -117,24 +119,32 @@ export default function Messages() {
       .select("id, full_name, role, last_seen_at")
       .neq("id", user.id);
 
-    if (!profilesData) {
-      setLoading(false);
-      return;
-    }
+    const { data: myGroups } = await (supabase as any)
+      .from("group_members")
+      .select("group_id, groups(id, name)")
+      .eq("user_id", user.id);
+
+    const groupItems = myGroups?.map((g: any) => ({
+      id: g.groups.id,
+      full_name: (g.groups.name as string).toUpperCase(),
+      role: "GRUP",
+      isGroup: true
+    })) || [];
 
     const { data: lastMessages } = await (supabase as any)
       .from("messages")
-      .select("sender_id, receiver_id, created_at, is_read")
-      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .select("sender_id, receiver_id, group_id, created_at, is_read")
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupItems.map((g:any) => g.id).join(',') || 'NULL'})`)
       .order("created_at", { ascending: false });
 
-    const processed = profilesData.map((p: any) => {
+    const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
       const lastMsg = lastMessages?.find((m: any) => 
-        (m.sender_id === p.id && m.receiver_id === user.id) || 
-        (m.sender_id === user.id && m.receiver_id === p.id)
+        p.isGroup 
+          ? m.group_id === p.id 
+          : (m.sender_id === p.id && m.receiver_id === user.id) || (m.sender_id === user.id && m.receiver_id === p.id)
       );
       const hasUnread = lastMessages?.some((m: any) => 
-        m.sender_id === p.id && m.receiver_id === user.id && !m.is_read
+        p.isGroup ? false : m.sender_id === p.id && m.receiver_id === user.id && !m.is_read
       );
       return {
         ...p,
@@ -143,35 +153,55 @@ export default function Messages() {
       };
     });
 
-    const sorted = processed.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0) || a.full_name.localeCompare(b.full_name));
-    setProfiles(sorted);
+    const sorted = allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0) || a.full_name.localeCompare(b.full_name));
+    setItems(sorted);
     setLoading(false);
   };
 
   const fetchMessages = async () => {
     if (!user || !selectedRecipient) return;
-    const { data } = await (supabase as any).from("messages")
-      .select("*, book:books(title), message_reactions(id, emoji, user_id)")
-      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedRecipient.id}),and(sender_id.eq.${selectedRecipient.id},receiver_id.eq.${user.id})`)
-      .order("created_at", { ascending: true });
+    
+    let query = (supabase as any).from("messages")
+      .select("*, book:books(title), message_reactions(id, emoji, user_id), sender:profiles(full_name)");
+
+    if (selectedRecipient.isGroup) {
+      query = query.eq("group_id", selectedRecipient.id);
+    } else {
+      query = query.or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedRecipient.id}),and(sender_id.eq.${selectedRecipient.id},receiver_id.eq.${user.id})`);
+    }
+
+    const { data } = await query.order("created_at", { ascending: true });
     setMessages(data || []);
-    if (data?.some(m => !m.is_read && m.receiver_id === user.id)) {
+    
+    if (!selectedRecipient.isGroup && data?.some((m: any) => !m.is_read && m.receiver_id === user.id)) {
       await markAsRead(selectedRecipient.id);
     }
   };
 
   const markAsRead = async (recipientId: string) => {
     await (supabase as any).from("messages").update({ is_read: true }).eq("receiver_id", user?.id).eq("sender_id", recipientId).eq("is_read", false);
-    fetchProfiles();
+    fetchItems();
   };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedRecipient || !user) return;
-    await (supabase as any).from("messages").insert({ sender_id: user.id, receiver_id: selectedRecipient.id, content: newMessage });
+    
+    const payload: any = { 
+      sender_id: user.id, 
+      content: newMessage 
+    };
+
+    if (selectedRecipient.isGroup) {
+      payload.group_id = selectedRecipient.id;
+    } else {
+      payload.receiver_id = selectedRecipient.id;
+    }
+
+    await (supabase as any).from("messages").insert(payload);
     setNewMessage("");
     fetchMessages();
-    fetchProfiles();
+    fetchItems();
   };
 
   const deleteMessage = async (id: string) => {
@@ -228,24 +258,26 @@ export default function Messages() {
         </div>
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
-            {profiles.filter(p => p.full_name.toLowerCase().includes(search.toLowerCase())).map(profile => (
+            {items.filter(p => p.full_name.toLowerCase().includes(search.toLowerCase())).map(item => (
               <button
-                key={profile.id}
-                onClick={() => setSelectedRecipient(profile)}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${selectedRecipient?.id === profile.id ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-white/5 text-muted-foreground hover:text-white"}`}
+                key={item.id}
+                onClick={() => setSelectedRecipient(item)}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${selectedRecipient?.id === item.id ? "bg-primary text-primary-foreground shadow-lg" : "hover:bg-white/5 text-muted-foreground hover:text-white"}`}
               >
                 <div className="relative">
-                  <Avatar className="h-10 w-10 border-2 border-white/10">
-                    <AvatarFallback className="bg-secondary/20"><User className="w-5 h-5" /></AvatarFallback>
+                  <Avatar className={`h-10 w-10 border-2 border-white/10 ${item.isGroup ? "rounded-xl bg-indigo-500/20" : ""}`}>
+                    <AvatarFallback className={item.isGroup ? "bg-transparent text-indigo-400" : "bg-secondary/20"}>
+                      {item.isGroup ? <Users className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                    </AvatarFallback>
                   </Avatar>
-                  {isUserActive(profile.last_seen_at) && <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-[#12141c] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />}
+                  {!item.isGroup && isUserActive(item.last_seen_at) && <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-emerald-500 border-2 border-[#12141c] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />}
                 </div>
                 <div className="text-left flex-1 overflow-hidden">
                   <div className="flex items-center justify-between">
-                    <p className="font-bold text-sm truncate">{profile.full_name}</p>
-                    {profile.hasUnread && <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />}
+                    <p className={`font-bold text-sm truncate ${item.isGroup ? "text-indigo-200" : ""}`}>{item.full_name}</p>
+                    {item.hasUnread && <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />}
                   </div>
-                  <p className="text-[10px] opacity-50 truncate uppercase">{profile.role}</p>
+                  <p className="text-[10px] opacity-50 truncate uppercase font-bold tracking-tighter">{item.role}</p>
                 </div>
               </button>
             ))}
@@ -261,14 +293,18 @@ export default function Messages() {
               <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setSelectedRecipient(null)} className="md:hidden"><ArrowLeft className="w-5 h-5" /></Button>
                 <div className="relative">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                    <AvatarFallback><User className="w-6 h-6" /></AvatarFallback>
+                  <Avatar className={`h-10 w-10 ring-2 ${selectedRecipient.isGroup ? "ring-indigo-500/30 rounded-xl bg-indigo-500/10" : "ring-primary/20"}`}>
+                    <AvatarFallback className={selectedRecipient.isGroup ? "text-indigo-400" : ""}>
+                      {selectedRecipient.isGroup ? <Users className="w-6 h-6" /> : <User className="w-6 h-6" />}
+                    </AvatarFallback>
                   </Avatar>
-                  {isUserActive(selectedRecipient.last_seen_at) && <div className="absolute bottom-0 right-0 h-3 w-3 bg-emerald-500 border-2 border-background rounded-full animate-pulse" />}
+                  {!selectedRecipient.isGroup && isUserActive(selectedRecipient.last_seen_at) && <div className="absolute bottom-0 right-0 h-3 w-3 bg-emerald-500 border-2 border-background rounded-full animate-pulse" />}
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground leading-tight">{selectedRecipient.full_name}</h3>
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">{isUserActive(selectedRecipient.last_seen_at) ? "Aktif" : selectedRecipient.role}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
+                    {selectedRecipient.isGroup ? "Grup Sohbeti" : (isUserActive(selectedRecipient.last_seen_at) ? "Aktif" : selectedRecipient.role)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -277,6 +313,9 @@ export default function Messages() {
               <div className="space-y-6">
                 {messages.map(msg => (
                   <div key={msg.id} className={`flex flex-col group ${msg.sender_id === user?.id ? "items-end" : "items-start"}`}>
+                    {selectedRecipient.isGroup && msg.sender_id !== user?.id && (
+                      <span className="text-[10px] font-bold text-muted-foreground mb-1 ml-4 uppercase tracking-widest">{msg.sender?.full_name}</span>
+                    )}
                     <div className="max-w-[80%] space-y-1 relative">
                       {msg.quoted_text && (
                         <div className="bg-muted/40 p-3 rounded-xl border-l-4 border-primary text-xs italic mb-1">
@@ -324,7 +363,11 @@ export default function Messages() {
 
                       <div className="flex items-center justify-end gap-1 px-1">
                         <span className="text-[9px] opacity-30 font-mono">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        {msg.sender_id === user?.id && <span className={`text-[8px] font-black uppercase ${msg.is_read ? "text-blue-500" : "opacity-30"}`}>{msg.is_read ? "Görüldü" : "İletildi"}</span>}
+                        {!selectedRecipient.isGroup && msg.sender_id === user?.id && (
+                          <span className={`text-[8px] font-black uppercase ${msg.is_read ? "text-blue-500" : "opacity-30"}`}>
+                            {msg.is_read ? "Görüldü" : "İletildi"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -335,16 +378,16 @@ export default function Messages() {
 
             <div className="p-6 bg-background/80 backdrop-blur-xl border-t border-white/5">
               <form onSubmit={sendMessage} className="flex gap-4">
-                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Bir şeyler yaz..." className="flex-1 bg-white/5 border-white/10 h-14 px-6 rounded-2xl" />
+                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder={`${selectedRecipient.full_name} grubuna mesaj yaz...`} className="flex-1 bg-white/5 border-white/10 h-14 px-6 rounded-2xl" />
                 <Button type="submit" size="lg" className="h-14 w-14 rounded-2xl"><Send className="w-6 h-6" /></Button>
               </form>
             </div>
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-20 p-20 text-center">
-            <Send className="w-32 h-32 mb-8" />
+            <Users className="w-32 h-32 mb-8" />
             <h2 className="text-3xl font-display font-bold">Bir Sohbet Seç</h2>
-            <p className="max-w-xs mt-4">Arkadaşlarınla kitaplardaki alıntıları ve düşüncelerini paylaşmaya hemen başla.</p>
+            <p className="max-w-xs mt-4">Arkadaşlarınla veya grubunla hemen yazışmaya başla.</p>
           </div>
         )}
       </div>
