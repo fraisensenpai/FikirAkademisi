@@ -413,7 +413,7 @@ export default function Messages() {
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-20 p-20 text-center">
             <Users className="w-32 h-32 mb-8" />
             <h2 className="text-3xl font-display font-bold">Bir Sohbet Seç</h2>
-            <p className="max-w-xs mt-4">Arkadaşlarınla veya grubunla hemen yazışmaya başla.</p>
+            <p className="max-w-xs mt-4">Arkadaşlarınla veya grubunla hemen yazışmaya başla! 🚀</p>
           </div>
         )}
       </div>
