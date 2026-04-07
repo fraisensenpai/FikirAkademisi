@@ -21,6 +21,7 @@ interface GroupMember {
   profiles: {
     full_name: string;
     school_number: string;
+    class_name: string;
   };
 }
 
@@ -28,6 +29,7 @@ interface Student {
   id: string;
   full_name: string;
   school_number: string;
+  class_name: string;
 }
 
 export default function ManageGroups() {
@@ -54,7 +56,7 @@ export default function ManageGroups() {
   const fetchStudents = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, school_number")
+      .select("id, full_name, school_number, class_name")
       .eq("role", "student")
       .order("full_name");
     setStudents(data as any || []);
@@ -66,12 +68,20 @@ export default function ManageGroups() {
       .select(`
         id,
         user_id,
-        profiles:profiles (full_name, school_number)
+        profiles (
+          full_name,
+          school_number,
+          class_name
+        )
       `)
       .eq("group_id", groupId);
     
-    if (error) toast.error("Grup üyeleri yüklenemedi");
-    else setGroupMembers(data as any || []);
+    if (error) {
+      console.error("Grup üyeleri hatası:", error);
+      toast.error("Grup üyeleri yüklenemedi");
+    } else {
+      setGroupMembers(data as any || []);
+    }
   };
 
   useEffect(() => {
@@ -136,8 +146,9 @@ export default function ManageGroups() {
 
   const filteredStudents = students.filter(s => 
     s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (s.school_number && s.school_number.includes(searchTerm))
-  ).slice(0, 10);
+    (s.school_number && s.school_number.includes(searchTerm)) ||
+    (s.class_name && s.class_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  ).slice(0, 15);
 
   if (loading) return <div className="flex items-center justify-center h-64">Yükleniyor...</div>;
 
@@ -241,17 +252,24 @@ export default function ManageGroups() {
                           onChange={e => setSearchTerm(e.target.value)}
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                         {filteredStudents.map(s => (
-                          <div key={s.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group">
+                          <div key={s.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group/item">
                             <div>
-                              <p className="text-sm font-bold">{s.full_name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-bold">{s.full_name}</p>
+                                {s.class_name && (
+                                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-black italic">
+                                    {s.class_name}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{s.school_number || 'Numara Yok'}</p>
                             </div>
                             <Button 
                               size="sm" 
                               variant="secondary"
-                              className="rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="rounded-lg opacity-0 group-hover/item:opacity-100 transition-opacity"
                               onClick={() => handleAddMember(s.id)}
                             >
                               Ekle
@@ -276,10 +294,17 @@ export default function ManageGroups() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {groupMembers.map(m => (
-                      <div key={m.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-primary/20 transition-all">
+                      <div key={m.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group/member hover:border-primary/20 transition-all">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-[10px] font-black text-secondary uppercase">
-                            {m.profiles.full_name.substring(0, 2)}
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-[10px] font-black text-secondary uppercase">
+                              {m.profiles.full_name.substring(0, 2)}
+                            </div>
+                            {m.profiles.class_name && (
+                              <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[8px] font-black px-1 rounded-sm shadow-lg">
+                                {m.profiles.class_name}
+                              </div>
+                            )}
                           </div>
                           <div>
                             <p className="text-sm font-bold">{m.profiles.full_name}</p>
@@ -289,7 +314,7 @@ export default function ManageGroups() {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                          className="h-8 w-8 opacity-0 group-hover/member:opacity-100 transition-opacity hover:text-destructive"
                           onClick={() => handleRemoveMember(m.id)}
                         >
                           <X className="w-4 h-4" />
