@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Send, BookOpen, User, Users, Search, Trash2, ArrowLeft, Check, CheckCheck, Smile } from "lucide-react";
+import { Send, BookOpen, User, Users, Search, Trash2, ArrowLeft, Check, CheckCheck, Smile, Phone, Video, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Profile {
@@ -212,11 +212,44 @@ export default function Messages() {
     }
   };
 
+  const [groupMembers, setGroupMembers] = useState<any[]>([]);
+
+  const fetchGroupMembersInfo = async (groupId: string) => {
+    try {
+      const { data } = await (supabase as any)
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", groupId);
+      
+      if (data && data.length > 0) {
+        const uIds = data.map((d: any) => d.user_id);
+        const { data: profs } = await (supabase as any)
+          .from("profiles")
+          .select("full_name")
+          .in("id", uIds);
+        setGroupMembers(profs || []);
+      } else {
+        setGroupMembers([]);
+      }
+    } catch (err) {
+      console.error("Grup üyeleri çekilemedi:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedRecipient?.isGroup) {
+      fetchGroupMembersInfo(selectedRecipient.id);
+    } else {
+      setGroupMembers([]);
+    }
+    fetchMessages();
+  }, [selectedRecipient?.id]);
+
   const fetchMessages = async () => {
     if (!user || !selectedRecipient) return;
     
     try {
-      // 1. Mesajları en sade haliyle çek (Hata riskini sıfırlıyoruz)
+      // 1. Mesajları en sade haliyle çek
       let query = (supabase as any).from("messages")
         .select(`
           *,
@@ -233,9 +266,8 @@ export default function Messages() {
       const { data, error } = await query.order("created_at", { ascending: true });
       if (error) throw error;
       
-      // 2. İsimleri koda (manuel) ekle (Veritabanı yerine biz yapıyoruz)
+      // 2. İsimleri koda (manuel) ekle
       const messagesWithNames = data?.map((m: any) => {
-        // İsmi ya sol listedeki 'items' içinden bul ya da 'Giden Mesaj' de
         const sender = items.find(it => it.id === m.sender_id);
         const senderName = m.sender_id === user.id ? "Siz" : (sender?.full_name || "Bilinmeyen Kullanıcı");
         return {
@@ -244,7 +276,6 @@ export default function Messages() {
         };
       });
 
-      console.log("fetchMessages: Mesajlar başarıyla eşleştirildi. Sayı:", messagesWithNames?.length || 0);
       setMessages(messagesWithNames || []);
       
       if (!selectedRecipient.isGroup && data?.some((m: any) => !m.is_read && m.receiver_id === user.id)) {
@@ -369,21 +400,29 @@ export default function Messages() {
           <>
             <div className="p-4 md:p-6 border-b border-white/5 flex items-center justify-between bg-background/80 backdrop-blur-md z-10">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => setSelectedRecipient(null)} className="md:hidden"><ArrowLeft className="w-5 h-5" /></Button>
-                <div className="relative">
-                  <Avatar className={`h-10 w-10 ring-2 ${selectedRecipient.isGroup ? "ring-indigo-500/30 rounded-xl bg-indigo-500/10" : "ring-primary/20"}`}>
-                    <AvatarFallback className={selectedRecipient.isGroup ? "text-indigo-400" : ""}>
-                      {selectedRecipient.isGroup ? <Users className="w-6 h-6" /> : <User className="w-6 h-6" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  {!selectedRecipient.isGroup && isUserActive(selectedRecipient.last_seen_at) && <div className="absolute bottom-0 right-0 h-3 w-3 bg-emerald-500 border-2 border-background rounded-full animate-pulse" />}
+                <Button variant="ghost" size="icon" onClick={() => setSelectedRecipient(null)} className="md:hidden">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xl uppercase italic">
+                  {selectedRecipient.full_name.substring(0, 2)}
                 </div>
                 <div>
-                  <h3 className="font-bold text-foreground leading-tight">{selectedRecipient.full_name}</h3>
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
-                    {selectedRecipient.isGroup ? "Grup Sohbeti" : (isUserActive(selectedRecipient.last_seen_at) ? "Aktif" : selectedRecipient.role)}
-                  </p>
+                  <h2 className="text-xl font-display font-bold leading-none">{selectedRecipient.full_name}</h2>
+                  {selectedRecipient.isGroup ? (
+                    <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest font-bold max-w-[200px] md:max-w-md truncate">
+                      {groupMembers.length} Üye: {groupMembers.map(m => m.full_name).join(", ")}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-secondary mt-1 font-medium italic uppercase tracking-tighter opacity-80">
+                      {isUserActive(selectedRecipient.last_seen_at) ? "Çevrimiçi" : selectedRecipient.role}
+                    </p>
+                  )}
                 </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="hidden sm:flex text-muted-foreground hover:text-primary"><Phone className="w-5 h-5" /></Button>
+                <Button variant="ghost" size="icon" className="hidden sm:flex text-muted-foreground hover:text-primary"><Video className="w-5 h-5" /></Button>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary"><Info className="w-5 h-5" /></Button>
               </div>
             </div>
 

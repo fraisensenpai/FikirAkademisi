@@ -68,20 +68,12 @@ export default function ManageGroups() {
   const fetchGroupMembers = async (groupId: string) => {
     const { data, error } = await supabase
       .from("group_members")
-      .select(`
-        id,
-        user_id,
-        profiles (
-          full_name,
-          school_number,
-          class_name
-        )
-      `)
+      .select("id, profiles!user_id(id, full_name, school_number, class_name, role)")
       .eq("group_id", groupId);
     
     if (error) {
-      console.error("Grup üyeleri hatası:", error);
-      toast.error("Grup üyeleri yüklenemedi");
+      console.error("fetchGroupMembers error:", error);
+      toast.error("Üyeler yüklenemedi");
     } else {
       setGroupMembers(data as any || []);
     }
@@ -126,6 +118,7 @@ export default function ManageGroups() {
       .insert({ group_id: selectedGroup.id, user_id: studentId });
 
     if (error) {
+      console.error("handleAddMember error:", error);
       if (error.code === "23505") toast.error("Kişi zaten bu grupta");
       else toast.error("Üye eklenemedi");
     } else {
