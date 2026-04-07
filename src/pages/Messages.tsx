@@ -141,21 +141,26 @@ export default function Messages() {
         isGroup: true
       })) || [];
 
-      // 3. Mesaj geçmişini çek
-      const groupIds = groupItems.map(g => g.id);
-      let query = (supabase as any).from("messages").select("sender_id, receiver_id, group_id, created_at, is_read");
-      
-      if (groupIds.length > 0) {
-        query = query.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupIds.join(',')})`);
-      } else {
-        query = query.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+      // 3. Mesaj geçmişini çek (Okunmadı ve sıralama için)
+      let lastMessages: any[] = [];
+      try {
+        const groupIds = groupItems.map(g => g.id);
+        let query = (supabase as any).from("messages").select("sender_id, receiver_id, group_id, created_at, is_read");
+        
+        if (groupIds.length > 0) {
+          query = query.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupIds.join(',')})`);
+        } else {
+          query = query.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+        }
+
+        const { data, error: msgError } = await query.order("created_at", { ascending: false });
+        if (!msgError) lastMessages = data || [];
+        else console.warn("Mesaj geçmişi yüklenemedi (Sıralama varsayılan olacak):", msgError);
+      } catch (e) {
+        console.warn("Mesaj geçmişi sorgu hatası:", e);
       }
 
-      const { data: lastMessages, error: msgError } = await query.order("created_at", { ascending: false });
-
-      if (msgError) throw msgError;
-      console.log("Mesaj geçmişi yüklendi:", lastMessages?.length || 0);
-
+      console.log("Listeniz hazırlanıyor...");
       const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
         const lastMsg = lastMessages?.find((m: any) => 
           p.isGroup 
@@ -174,7 +179,8 @@ export default function Messages() {
 
       setItems(allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0)));
     } catch (err) {
-      console.error("fetchItems Hatası:", err);
+      console.error("fetchItems Genel Hatası:", err);
+      toast.error("Bağlantı hatası: Sayfayı yenileyin");
     } finally {
       setLoading(false);
     }
