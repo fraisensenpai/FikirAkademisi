@@ -217,7 +217,12 @@ export default function Messages() {
     
     try {
       let query = (supabase as any).from("messages")
-        .select("*, book:books(title), message_reactions(id, emoji, user_id), sender:profiles(full_name)");
+        .select(`
+          *,
+          book:books(title),
+          message_reactions(id, emoji, user_id),
+          sender:profiles!sender_id(full_name)
+        `);
 
       if (selectedRecipient.isGroup) {
         query = query.eq("group_id", selectedRecipient.id);
