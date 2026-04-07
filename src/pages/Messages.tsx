@@ -106,21 +106,42 @@ export default function Messages() {
   const fetchItems = async () => {
     if (!user) return;
     setLoading(true);
+    
+    // 1. Diğer profilleri çek
     const { data: profilesData } = await (supabase as any).from("profiles").select("id, full_name, role, last_seen_at").neq("id", user.id);
-    const { data: myGroups } = await (supabase as any).from("group_members").select("group_id, groups(id, name)").eq("user_id", user.id);
-    const groupItems = myGroups?.map((g: any) => ({
-      id: g.groups.id,
-      full_name: (g.groups.name as string).toUpperCase(),
-      role: "GRUP",
-      isGroup: true
-    })) || [];
-    const { data: lastMessages } = await (supabase as any).from("messages").select("sender_id, receiver_id, group_id, created_at, is_read").or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupItems.map((g:any) => g.id).join(',') || 'NULL'})`).order("created_at", { ascending: false });
+    
+    // 2. Üyesi olduğun grupları çek
+    const { data: memberGroups } = await (supabase as any).from("group_members").select("group_id, groups(id, name)").eq("user_id", user.id);
+    
+    // 3. Kurduğun (Sahibi olduğun) grupları çek
+    const { data: ownedGroups } = await (supabase as any).from("groups").select("id, name").eq("teacher_id", user.id);
+
+    // Grupları birleştirelim ve benzersiz yapalım
+    const groupMap = new Map();
+    
+    memberGroups?.forEach((g: any) => {
+      if (g.groups) groupMap.set(g.groups.id, { id: g.groups.id, full_name: g.groups.name, role: "GRUP", isGroup: true });
+    });
+    
+    ownedGroups?.forEach((g: any) => {
+      groupMap.set(g.id, { id: g.id, full_name: g.name, role: "GRUP (SAHİBİ)", isGroup: true });
+    });
+
+    const groupItems = Array.from(groupMap.values());
+
+    // 4. Mesaj geçmişini çek (Sıralama için)
+    const { data: lastMessages } = await (supabase as any).from("messages")
+      .select("sender_id, receiver_id, group_id, created_at, is_read")
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupItems.length > 0 ? groupItems.map(g => g.id).join(',') : 'NULL'})`)
+      .order("created_at", { ascending: false });
+
     const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
       const lastMsg = lastMessages?.find((m: any) => p.isGroup ? m.group_id === p.id : (m.sender_id === p.id && m.receiver_id === user.id) || (m.sender_id === user.id && m.receiver_id === p.id));
       const hasUnread = lastMessages?.some((m: any) => p.isGroup ? false : m.sender_id === p.id && m.receiver_id === user.id && !m.is_read);
       return { ...p, lastMessageAt: lastMsg ? new Date(lastMsg.created_at).getTime() : 0, hasUnread };
     });
-    setItems(allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0) || a.full_name.localeCompare(b.full_name)));
+
+    setItems(allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0) || (a.full_name || "").localeCompare(b.full_name || "")));
     setLoading(false);
   };
 
