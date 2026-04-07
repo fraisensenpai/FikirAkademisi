@@ -88,7 +88,7 @@ CREATE POLICY "Students can view assignments assigned to them" ON public.assignm
   FOR SELECT USING (
     (target_class IS NOT NULL AND EXISTS (
       SELECT 1 FROM public.profiles
-      WHERE id = auth.uid() AND class_name = target_class
+      WHERE id = auth.uid() AND class_name = target_class0
     ))
     OR (target_student_id = auth.uid())
     OR (target_group_id IS NOT NULL AND EXISTS (

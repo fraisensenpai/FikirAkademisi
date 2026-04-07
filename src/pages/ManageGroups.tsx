@@ -66,30 +66,24 @@ export default function ManageGroups() {
   };
 
   const fetchGroupMembers = async (groupId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("group_members")
-        .select(`
-          id,
-          user_id,
-          profiles (
-            full_name,
-            school_number,
-            class_name,
-            role
-          )
-        `)
-        .eq("group_id", groupId);
-      
-      if (error) {
-        console.error("Grup üyeleri hatası (DB):", error);
-        toast.error("Grup üyeleri yüklenemedi (Veritabanı hatası)");
-      } else {
-        setGroupMembers(data as any || []);
-      }
-    } catch (err) {
-      console.error("Grup üyeleri hatası (JS):", err);
-      toast.error("Grup üyeleri yüklenemedi (Bağlantı hatası)");
+    const { data, error } = await supabase
+      .from("group_members")
+      .select(`
+        id,
+        user_id,
+        profiles (
+          full_name,
+          school_number,
+          class_name
+        )
+      `)
+      .eq("group_id", groupId);
+    
+    if (error) {
+      console.error("Grup üyeleri hatası:", error);
+      toast.error("Grup üyeleri yüklenemedi");
+    } else {
+      setGroupMembers(data as any || []);
     }
   };
 
