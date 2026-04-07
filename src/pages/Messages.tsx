@@ -123,6 +123,7 @@ export default function Messages() {
         .neq("id", user.id);
 
       if (profError) throw profError;
+      console.log("Profiller yüklendi:", profilesData?.length || 0);
 
       // 2. Kullanıcının üye olduğu grupları çek
       const { data: myGroups, error: grpError } = await (supabase as any)
@@ -131,6 +132,7 @@ export default function Messages() {
         .eq("user_id", user.id);
 
       if (grpError) throw grpError;
+      console.log("Gruplar yüklendi:", myGroups?.length || 0);
 
       const groupItems = myGroups?.map((g: any) => ({
         id: g.groups.id,
@@ -139,20 +141,20 @@ export default function Messages() {
         isGroup: true
       })) || [];
 
-      // 3. Mesaj geçmişini çek (Sıralama ve okunmadı bilgisi için)
+      // 3. Mesaj geçmişini çek
       const groupIds = groupItems.map(g => g.id);
-      let queryStr = `sender_id.eq.${user.id},receiver_id.eq.${user.id}`;
+      let query = (supabase as any).from("messages").select("sender_id, receiver_id, group_id, created_at, is_read");
+      
       if (groupIds.length > 0) {
-        queryStr += `,group_id.in.(${groupIds.join(',')})`;
+        query = query.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupIds.join(',')})`);
+      } else {
+        query = query.or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
       }
 
-      const { data: lastMessages, error: msgError } = await (supabase as any)
-        .from("messages")
-        .select("sender_id, receiver_id, group_id, created_at, is_read")
-        .or(queryStr)
-        .order("created_at", { ascending: false });
+      const { data: lastMessages, error: msgError } = await query.order("created_at", { ascending: false });
 
       if (msgError) throw msgError;
+      console.log("Mesaj geçmişi yüklendi:", lastMessages?.length || 0);
 
       const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
         const lastMsg = lastMessages?.find((m: any) => 
