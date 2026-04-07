@@ -76,6 +76,7 @@ export default function Messages() {
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
         () => {
+          console.log("Realtime: Mesaj değişikliği algılandı");
           fetchMessages();
           fetchItems();
         }
@@ -112,69 +113,94 @@ export default function Messages() {
 
   const fetchItems = async () => {
     if (!user) return;
-    setLoading(true);
-    
-    const { data: profilesData } = await (supabase as any)
-      .from("profiles")
-      .select("id, full_name, role, last_seen_at")
-      .neq("id", user.id);
+    try {
+      setLoading(true);
+      
+      // 1. Profil bilgilerini çek
+      const { data: profilesData, error: profError } = await (supabase as any)
+        .from("profiles")
+        .select("id, full_name, role, last_seen_at")
+        .neq("id", user.id);
 
-    const { data: myGroups } = await (supabase as any)
-      .from("group_members")
-      .select("group_id, groups(id, name)")
-      .eq("user_id", user.id);
+      if (profError) throw profError;
 
-    const groupItems = myGroups?.map((g: any) => ({
-      id: g.groups.id,
-      full_name: (g.groups.name as string).toUpperCase(),
-      role: "GRUP",
-      isGroup: true
-    })) || [];
+      // 2. Kullanıcının üye olduğu grupları çek
+      const { data: myGroups, error: grpError } = await (supabase as any)
+        .from("group_members")
+        .select("group_id, groups(id, name)")
+        .eq("user_id", user.id);
 
-    const { data: lastMessages } = await (supabase as any)
-      .from("messages")
-      .select("sender_id, receiver_id, group_id, created_at, is_read")
-      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id},group_id.in.(${groupItems.map((g:any) => g.id).join(',') || 'NULL'})`)
-      .order("created_at", { ascending: false });
+      if (grpError) throw grpError;
 
-    const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
-      const lastMsg = lastMessages?.find((m: any) => 
-        p.isGroup 
-          ? m.group_id === p.id 
-          : (m.sender_id === p.id && m.receiver_id === user.id) || (m.sender_id === user.id && m.receiver_id === p.id)
-      );
-      const hasUnread = lastMessages?.some((m: any) => 
-        p.isGroup ? false : m.sender_id === p.id && m.receiver_id === user.id && !m.is_read
-      );
-      return {
-        ...p,
-        lastMessageAt: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
-        hasUnread
-      };
-    });
+      const groupItems = myGroups?.map((g: any) => ({
+        id: g.groups.id,
+        full_name: (g.groups.name as string).toUpperCase(),
+        role: "GRUP",
+        isGroup: true
+      })) || [];
 
-    const sorted = allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0) || a.full_name.localeCompare(b.full_name));
-    setItems(sorted);
-    setLoading(false);
+      // 3. Mesaj geçmişini çek (Sıralama ve okunmadı bilgisi için)
+      const groupIds = groupItems.map(g => g.id);
+      let queryStr = `sender_id.eq.${user.id},receiver_id.eq.${user.id}`;
+      if (groupIds.length > 0) {
+        queryStr += `,group_id.in.(${groupIds.join(',')})`;
+      }
+
+      const { data: lastMessages, error: msgError } = await (supabase as any)
+        .from("messages")
+        .select("sender_id, receiver_id, group_id, created_at, is_read")
+        .or(queryStr)
+        .order("created_at", { ascending: false });
+
+      if (msgError) throw msgError;
+
+      const allItems = [...(profilesData || []), ...groupItems].map((p: any) => {
+        const lastMsg = lastMessages?.find((m: any) => 
+          p.isGroup 
+            ? m.group_id === p.id 
+            : (m.sender_id === p.id && m.receiver_id === user.id) || (m.sender_id === user.id && m.receiver_id === p.id)
+        );
+        const hasUnread = lastMessages?.some((m: any) => 
+          p.isGroup ? false : m.sender_id === p.id && m.receiver_id === user.id && !m.is_read
+        );
+        return {
+          ...p,
+          lastMessageAt: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
+          hasUnread
+        };
+      });
+
+      setItems(allItems.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0)));
+    } catch (err) {
+      console.error("fetchItems Hatası:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchMessages = async () => {
     if (!user || !selectedRecipient) return;
     
-    let query = (supabase as any).from("messages")
-      .select("*, book:books(title), message_reactions(id, emoji, user_id), sender:profiles(full_name)");
+    try {
+      let query = (supabase as any).from("messages")
+        .select("*, book:books(title), message_reactions(id, emoji, user_id), sender:profiles(full_name)");
 
-    if (selectedRecipient.isGroup) {
-      query = query.eq("group_id", selectedRecipient.id);
-    } else {
-      query = query.or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedRecipient.id}),and(sender_id.eq.${selectedRecipient.id},receiver_id.eq.${user.id})`);
-    }
+      if (selectedRecipient.isGroup) {
+        query = query.eq("group_id", selectedRecipient.id);
+      } else {
+        query = query.or(`and(sender_id.eq.${user.id},receiver_id.eq.${selectedRecipient.id}),and(sender_id.eq.${selectedRecipient.id},receiver_id.eq.${user.id})`);
+      }
 
-    const { data } = await query.order("created_at", { ascending: true });
-    setMessages(data || []);
-    
-    if (!selectedRecipient.isGroup && data?.some((m: any) => !m.is_read && m.receiver_id === user.id)) {
-      await markAsRead(selectedRecipient.id);
+      const { data, error } = await query.order("created_at", { ascending: true });
+      if (error) throw error;
+      
+      setMessages(data || []);
+      
+      if (!selectedRecipient.isGroup && data?.some((m: any) => !m.is_read && m.receiver_id === user.id)) {
+        await markAsRead(selectedRecipient.id);
+      }
+    } catch (err) {
+      console.error("fetchMessages Hatası:", err);
     }
   };
 
