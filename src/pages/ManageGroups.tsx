@@ -22,14 +22,16 @@ interface GroupMember {
     full_name: string;
     school_number: string;
     class_name: string;
+    role: string;
   };
 }
 
-interface Student {
+interface PotentialMember {
   id: string;
   full_name: string;
   school_number: string;
   class_name: string;
+  role: string;
 }
 
 export default function ManageGroups() {
@@ -39,7 +41,7 @@ export default function ManageGroups() {
   const [newGroupName, setNewGroupName] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [potentialMembers, setPotentialMembers] = useState<PotentialMember[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClass, setSelectedClass] = useState<string>("all");
 
@@ -54,13 +56,13 @@ export default function ManageGroups() {
     setLoading(false);
   };
 
-  const fetchStudents = async () => {
+  const fetchMembers = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, school_number, class_name")
-      .eq("role", "student")
+      .select("id, full_name, school_number, class_name, role")
+      .in("role", ["student", "teacher", "admin", "developer"])
       .order("full_name");
-    setStudents(data as any || []);
+    setPotentialMembers(data as any || []);
   };
 
   const fetchGroupMembers = async (groupId: string) => {
@@ -87,7 +89,7 @@ export default function ManageGroups() {
 
   useEffect(() => {
     fetchGroups();
-    fetchStudents();
+    fetchMembers();
   }, []);
 
   const handleCreateGroup = async (e: React.FormEvent) => {
@@ -124,7 +126,7 @@ export default function ManageGroups() {
       .insert({ group_id: selectedGroup.id, user_id: studentId });
 
     if (error) {
-      if (error.code === "23505") toast.error("Öğrenci zaten bu grupta");
+      if (error.code === "23505") toast.error("Kişi zaten bu grupta");
       else toast.error("Üye eklenemedi");
     } else {
       toast.success("Üye eklendi");
@@ -145,9 +147,9 @@ export default function ManageGroups() {
     }
   };
 
-  const classes = Array.from(new Set(students.map(s => s.class_name).filter(Boolean))).sort();
+  const classes = Array.from(new Set(potentialMembers.map(s => s.class_name).filter(Boolean))).sort();
 
-  const filteredStudents = students.filter(s => {
+  const filteredMembers = potentialMembers.filter(s => {
     const matchesSearch = s.full_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          (s.school_number && s.school_number.includes(searchTerm));
     const matchesClass = selectedClass === "all" || s.class_name === selectedClass;
@@ -270,18 +272,23 @@ export default function ManageGroups() {
                         </Select>
                       </div>
                       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                        {filteredStudents.map(s => (
+                        {filteredMembers.map(s => (
                           <div key={s.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors group/item">
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-bold">{s.full_name}</p>
+                                {s.role === 'teacher' && (
+                                  <span className="text-[10px] bg-secondary/20 text-secondary px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tighter border border-secondary/20">
+                                    Öğretmen
+                                  </span>
+                                )}
                                 {s.class_name && (
                                   <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-md font-black italic">
                                     {s.class_name}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{s.school_number || 'Numara Yok'}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{s.role === 'student' ? (s.school_number || 'No') : 'Hoca'}</p>
                             </div>
                             <Button 
                               size="sm" 
@@ -293,8 +300,8 @@ export default function ManageGroups() {
                             </Button>
                           </div>
                         ))}
-                        {searchTerm && filteredStudents.length === 0 && (
-                          <div className="text-center py-4 text-xs text-muted-foreground italic">Öğrenci bulunamadı</div>
+                        {searchTerm && filteredMembers.length === 0 && (
+                          <div className="text-center py-4 text-xs text-muted-foreground italic">Kişi bulunamadı</div>
                         )}
                       </div>
                     </div>
@@ -314,8 +321,8 @@ export default function ManageGroups() {
                       <div key={m.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group/member hover:border-primary/20 transition-all">
                         <div className="flex items-center gap-3">
                           <div className="relative">
-                            <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-[10px] font-black text-secondary uppercase">
-                              {m.profiles.full_name.substring(0, 2)}
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-black uppercase ${m.profiles.role === 'teacher' ? 'bg-secondary/20 text-secondary border border-secondary/20' : 'bg-primary/10 text-primary'}`}>
+                              {m.profiles.role === 'teacher' ? 'TR' : m.profiles.full_name.substring(0, 2)}
                             </div>
                             {m.profiles.class_name && (
                               <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[8px] font-black px-1 rounded-sm shadow-lg">
@@ -325,7 +332,7 @@ export default function ManageGroups() {
                           </div>
                           <div>
                             <p className="text-sm font-bold">{m.profiles.full_name}</p>
-                            <p className="text-[10px] text-muted-foreground">No: {m.profiles.school_number}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">{m.profiles.role === 'teacher' ? 'Öğretmen' : `No: ${m.profiles.school_number}`}</p>
                           </div>
                         </div>
                         <Button 
