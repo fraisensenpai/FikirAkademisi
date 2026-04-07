@@ -216,12 +216,12 @@ export default function Messages() {
     if (!user || !selectedRecipient) return;
     
     try {
+      // 1. Mesajları en sade haliyle çek (Hata riskini sıfırlıyoruz)
       let query = (supabase as any).from("messages")
         .select(`
           *,
           book:books(title),
-          message_reactions(id, emoji, user_id),
-          sender:profiles!sender_id(full_name)
+          message_reactions(id, emoji, user_id)
         `);
 
       if (selectedRecipient.isGroup) {
@@ -233,13 +233,26 @@ export default function Messages() {
       const { data, error } = await query.order("created_at", { ascending: true });
       if (error) throw error;
       
-      setMessages(data || []);
+      // 2. İsimleri koda (manuel) ekle (Veritabanı yerine biz yapıyoruz)
+      const messagesWithNames = data?.map((m: any) => {
+        // İsmi ya sol listedeki 'items' içinden bul ya da 'Giden Mesaj' de
+        const sender = items.find(it => it.id === m.sender_id);
+        const senderName = m.sender_id === user.id ? "Siz" : (sender?.full_name || "Bilinmeyen Kullanıcı");
+        return {
+          ...m,
+          sender: { full_name: senderName }
+        };
+      });
+
+      console.log("fetchMessages: Mesajlar başarıyla eşleştirildi. Sayı:", messagesWithNames?.length || 0);
+      setMessages(messagesWithNames || []);
       
       if (!selectedRecipient.isGroup && data?.some((m: any) => !m.is_read && m.receiver_id === user.id)) {
         await markAsRead(selectedRecipient.id);
       }
     } catch (err) {
-      console.error("fetchMessages Hatası:", err);
+      console.error("fetchMessages KRİTİK HATASI:", err);
+      toast.error("Mesajlar yüklenemedi");
     }
   };
 
