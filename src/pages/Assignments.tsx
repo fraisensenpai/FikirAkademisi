@@ -96,17 +96,40 @@ export default function Assignments() {
           created_at,
           book:books (title),
           movie:movies (title, url),
-          target_student:profiles!assignments_target_student_id_fkey (full_name),
           target_group:groups (name)
         `)
         .order("created_at", { ascending: false });
 
       if (assignErr) console.error("Assignments fetch error:", assignErr);
 
+      // Kişisel ödev atamalarında öğrenci adlarını getir
+      const rawAssignments = (assignmentsData as any) || [];
+      const studentIds = rawAssignments
+        .filter((a: any) => a.target_student_id)
+        .map((a: any) => a.target_student_id);
+
+      let studentNameMap: Record<string, string> = {};
+      if (studentIds.length > 0) {
+        const { data: studentProfiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", studentIds);
+        (studentProfiles || []).forEach((p: any) => {
+          studentNameMap[p.id] = p.full_name;
+        });
+      }
+
+      const enrichedAssignments = rawAssignments.map((a: any) => ({
+        ...a,
+        target_student: a.target_student_id
+          ? { full_name: studentNameMap[a.target_student_id] || "—" }
+          : null,
+      }));
+
       setBooks(booksData || []);
       setGroups(groupsData || []);
       setStudents(studentsData as any || []);
-      setAssignments((assignmentsData as any) || []);
+      setAssignments(enrichedAssignments);
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
