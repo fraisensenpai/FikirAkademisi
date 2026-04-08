@@ -193,10 +193,14 @@ export default function ReadBook() {
   const handleNextPage = async () => {
     if (!user || !book || (numPages && currentPage >= numPages)) return;
 
+    // SERT HİLE ENGELİ: Minimum süre dolmadan kesinlikle geçirilmez
     if (activeSeconds < MIN_READ_TIME_PER_PAGE) {
-      toast.warning("Sayfayı çok hızlı geçtiniz!", {
-        description: "Okuma sürenizin sayılması için sayfada aktif vakit geçirmelisiniz."
+      const remaining = MIN_READ_TIME_PER_PAGE - activeSeconds;
+      toast.error(`Sayfayı henüz geçemezsiniz! 🛡️`, {
+        description: `Sonraki sayfaya geçmek için ${remaining} saniye daha aktif okumanız gerekiyor.`,
+        duration: 3000,
       });
+      return; // KESİNLİKLE DURDUR
     }
 
     setSaving(true);
@@ -444,15 +448,25 @@ export default function ReadBook() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
 
-                <Button
-                  onClick={handleNextPage}
-                  disabled={saving || isLastPage}
-                  size="lg"
-                  className="px-6 md:px-8 h-10 md:h-12 rounded-xl md:rounded-2xl bg-primary text-primary-foreground font-bold shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 flex-1 md:flex-none text-xs md:text-sm"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : "Sonraki Sayfa"}
-                  <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
-                </Button>
+                {activeSeconds < MIN_READ_TIME_PER_PAGE ? (
+                  <Button
+                    onClick={handleNextPage}
+                    size="lg"
+                    className="px-4 md:px-8 h-10 md:h-12 rounded-xl md:rounded-2xl bg-amber-600/80 text-white font-bold shadow-lg flex-1 md:flex-none text-xs md:text-sm border border-amber-500/50 cursor-not-allowed"
+                  >
+                    🔒 {MIN_READ_TIME_PER_PAGE - activeSeconds}s bekle
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNextPage}
+                    disabled={saving || isLastPage}
+                    size="lg"
+                    className="px-6 md:px-8 h-10 md:h-12 rounded-xl md:rounded-2xl bg-primary text-primary-foreground font-bold shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 flex-1 md:flex-none text-xs md:text-sm"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : "Sonraki Sayfa"}
+                    <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
