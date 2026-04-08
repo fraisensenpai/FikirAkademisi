@@ -93,15 +93,15 @@ export default function Messages() {
           if (isForCurrentChat) {
             // Gönderen ismini bul
             const sender = items.find(it => it.id === newMsg.sender_id);
-            const senderName = newMsg.sender_id === user?.id ? "Siz" : (sender?.full_name || "Bilinmeyen Kullanıcı");
+            const senderName = newMsg.sender_id === user?.id ? "Siz" : (sender?.full_name || "Kullanıcı");
             
             setMessages(prev => {
               if (prev.some(m => m.id === newMsg.id)) return prev;
               return [...prev, { ...newMsg, sender: { full_name: senderName } }];
             });
-            fetchItems(); // Mesaj listesindeki sıralamayı/okunmadı bilgisini güncelle
+            fetchItems();
           } else {
-            fetchItems(); // Başka birinden mesaj geldiyse listeyi güncelle
+            fetchItems();
           }
         }
       )
@@ -110,6 +110,15 @@ export default function Messages() {
         { event: "DELETE", schema: "public", table: "messages" },
         (payload) => {
           setMessages(prev => prev.filter(m => m.id !== payload.old.id));
+          fetchItems();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        () => {
+          fetchMessages();
+          fetchItems();
         }
       )
       .on(
@@ -122,7 +131,7 @@ export default function Messages() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, selectedRecipient?.id]);
+  }, [user, items, selectedRecipient?.id]);
 
   useEffect(() => {
     if (selectedRecipient) {
