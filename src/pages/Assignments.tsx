@@ -83,7 +83,7 @@ export default function Assignments() {
         .eq("role", "student")
         .order("full_name");
 
-      const { data: assignmentsData } = await supabase
+      const { data: assignmentsData, error: assignErr } = await supabase
         .from("assignments")
         .select(`
           id,
@@ -100,6 +100,8 @@ export default function Assignments() {
           target_group:groups (name)
         `)
         .order("created_at", { ascending: false });
+
+      if (assignErr) console.error("Assignments fetch error:", assignErr);
 
       setBooks(booksData || []);
       setGroups(groupsData || []);
@@ -389,96 +391,113 @@ export default function Assignments() {
       </div>
 
       {/* Assignment List */}
-      <div className="grid grid-cols-1 gap-4">
-        {assignments.map((a) => (
-          <div key={a.id} className="glass-card p-5 flex items-center justify-between group">
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${a.movie_id ? "bg-amber-500/10" : "bg-primary/10"}`}>
-                {a.movie_id ? (
-                  <Film className="w-5 h-5 text-amber-500" />
-                ) : (
-                  <BookOpen className="w-5 h-5 text-primary" />
-                )}
-              </div>
-              <div>
-                <h4 className="font-bold">{a.book?.title || a.movie?.title}</h4>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
-                  <span className="flex items-center gap-1 font-medium bg-muted px-2 py-0.5 rounded">
-                    <Users className="w-3 h-3" />
-                    {a.target_class ? `${a.target_class} Sınıfı` : a.target_group?.name || a.target_student?.full_name}
-                  </span>
-                  {a.movie?.url && (
-                    <a href={a.movie.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                      İzle <Plus className="w-2 h-2 rotate-45" />
-                    </a>
-                  )}
-                  {a.due_date && (
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 ml-2" />
-                      Son: {new Date(a.due_date).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              </div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-foreground">Atanan Ödevler</h3>
+          <span className="text-sm text-muted-foreground">{assignments.length} ödev</span>
+        </div>
+
+        {assignments.length === 0 ? (
+          <div className="glass-card p-12 text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-muted/50 mb-2">
+              <BookOpen className="w-6 h-6 text-muted-foreground" />
             </div>
-            
-            {!a.movie_id && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={() => loadProgressDetails(a)} className="rounded-xl">
-                    Takip Et
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto rounded-3xl">
-                  <DialogHeader>
-                    <DialogTitle>İlerleme Durumu - {a.book?.title}</DialogTitle>
-                  </DialogHeader>
-                  <div className="mt-4">
-                    {trackingLoading ? (
-                      <div className="text-center py-10">Yükleniyor...</div>
-                    ) : trackingStudents.length === 0 ? (
-                      <div className="text-center py-10 text-muted-foreground">Kayıtlı öğrenci bulunamadı.</div>
+            <h4 className="font-semibold text-foreground">Henüz ödev atanmamış</h4>
+            <p className="text-sm text-muted-foreground">Yukarıdaki formu kullanarak öğrencilerinize ödev atayabilirsiniz.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {assignments.map((a) => (
+              <div key={a.id} className="glass-card p-5 flex items-center justify-between group">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl ${a.movie_id ? "bg-amber-500/10" : "bg-primary/10"}`}>
+                    {a.movie_id ? (
+                      <Film className="w-5 h-5 text-amber-500" />
                     ) : (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-4 text-xs font-bold uppercase tracking-wider text-muted-foreground px-4">
-                          <div className="col-span-2">Öğrenci</div>
-                          <div>İlerleme</div>
-                          <div className="text-right">Durum</div>
-                        </div>
-                        {trackingStudents.map((s, idx) => (
-                          <div key={idx} className="flex flex-col gap-2 p-4 bg-muted/30 rounded-xl border border-border/50">
-                            <div className="grid grid-cols-4 items-center">
-                              <div className="col-span-2">
-                                <p className="font-bold text-sm">{s.full_name}</p>
-                                <p className="text-[10px] text-muted-foreground">Nu: {s.school_number}</p>
-                              </div>
-                              <div className="text-xs">
-                                <span className="font-mono">{s.current_page}</span> / {s.total_pages || '?'} sayfa
-                              </div>
-                              <div className="flex justify-end">
-                                {s.is_completed ? (
-                                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                                ) : (
-                                  <XCircle className="w-5 h-5 text-rose-400 opacity-50" />
-                                )}
-                              </div>
-                            </div>
-                            <div className="h-1.5 bg-background rounded-full overflow-hidden">
-                               <div 
-                                className={`h-full transition-all duration-500 ${s.is_completed ? 'bg-emerald-500' : 'bg-primary'}`} 
-                                style={{ width: `${s.progress_percent}%` }}
-                               />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <BookOpen className="w-5 h-5 text-primary" />
                     )}
                   </div>
-                </DialogContent>
-              </Dialog>
-            )}
+                  <div>
+                    <h4 className="font-bold">{a.book?.title || a.movie?.title}</h4>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1 font-medium bg-muted px-2 py-0.5 rounded">
+                        <Users className="w-3 h-3" />
+                        {a.target_class ? `${a.target_class} Sınıfı` : a.target_group?.name || a.target_student?.full_name || 'Bilinmiyor'}
+                      </span>
+                      {a.movie?.url && (
+                        <a href={a.movie.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                          İzle <Plus className="w-2 h-2 rotate-45" />
+                        </a>
+                      )}
+                      {a.due_date && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 ml-2" />
+                          Son: {new Date(a.due_date).toLocaleDateString('tr-TR')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {!a.movie_id && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => loadProgressDetails(a)} className="rounded-xl">
+                        Takip Et
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto rounded-3xl">
+                      <DialogHeader>
+                        <DialogTitle>İlerleme Durumu - {a.book?.title}</DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-4">
+                        {trackingLoading ? (
+                          <div className="text-center py-10">Yükleniyor...</div>
+                        ) : trackingStudents.length === 0 ? (
+                          <div className="text-center py-10 text-muted-foreground">Kayıtlı öğrenci bulunamadı.</div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-4 text-xs font-bold uppercase tracking-wider text-muted-foreground px-4">
+                              <div className="col-span-2">Öğrenci</div>
+                              <div>İlerleme</div>
+                              <div className="text-right">Durum</div>
+                            </div>
+                            {trackingStudents.map((s, idx) => (
+                              <div key={idx} className="flex flex-col gap-2 p-4 bg-muted/30 rounded-xl border border-border/50">
+                                <div className="grid grid-cols-4 items-center">
+                                  <div className="col-span-2">
+                                    <p className="font-bold text-sm">{s.full_name}</p>
+                                    <p className="text-[10px] text-muted-foreground">Nu: {s.school_number}</p>
+                                  </div>
+                                  <div className="text-xs">
+                                    <span className="font-mono">{s.current_page}</span> / {s.total_pages || '?'} sayfa
+                                  </div>
+                                  <div className="flex justify-end">
+                                    {s.is_completed ? (
+                                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                    ) : (
+                                      <XCircle className="w-5 h-5 text-rose-400 opacity-50" />
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                                   <div 
+                                    className={`h-full transition-all duration-500 ${s.is_completed ? 'bg-emerald-500' : 'bg-primary'}`} 
+                                    style={{ width: `${s.progress_percent}%` }}
+                                   />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

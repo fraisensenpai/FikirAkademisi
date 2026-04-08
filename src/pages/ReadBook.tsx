@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,19 +53,19 @@ export default function ReadBook() {
 
   // Anti-Cheat Variables
   const [activeSeconds, setActiveSeconds] = useState(0);
-  const [lastActivity, setLastActivity] = useState(Date.now());
   const [isIdle, setIsIdle] = useState(false);
-  const IDLE_THRESHOLD = 60000; // 60 saniye hareketsizlik limiti
-  const MIN_READ_TIME_PER_PAGE = 10; // Bir sayfa için minimum 10 saniye aktiflik gerek
+  const lastActivityRef = useRef(Date.now()); // useRef: interval'i yeniden başlatmaz
+  const IDLE_THRESHOLD = 300000; // 5 dakika hareketsizlik limiti
+  const MIN_READ_TIME_PER_PAGE = 20; // Bir sayfa için minimum 20 saniye
 
-  const filteredParticipants = profiles.filter(p => 
+  const filteredParticipants = profiles.filter(p =>
     p.full_name.toLowerCase().includes(userSearch.toLowerCase())
   );
 
-  // Aktivite Takipçisi (Anti-Hile Mekanizması)
+  // Aktivite Takipçisi — sadece 1 kez kurulur, lastActivityRef ile çalışır
   useEffect(() => {
     const handleUserActivity = () => {
-      setLastActivity(Date.now());
+      lastActivityRef.current = Date.now(); // state değil ref: interval sıfırlanmaz
       setIsIdle(false);
     };
 
@@ -75,9 +75,9 @@ export default function ReadBook() {
     window.addEventListener("click", handleUserActivity);
     window.addEventListener("touchstart", handleUserActivity);
 
+    // Sabit interval — bağımlılık yok, 1 kez kurulur, düzgün sayar
     const interval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastActivity = now - lastActivity;
+      const timeSinceLastActivity = Date.now() - lastActivityRef.current;
       const isWindowActive = document.visibilityState === "visible";
 
       if (timeSinceLastActivity < IDLE_THRESHOLD && isWindowActive) {
@@ -96,7 +96,7 @@ export default function ReadBook() {
       window.removeEventListener("touchstart", handleUserActivity);
       clearInterval(interval);
     };
-  }, [lastActivity]);
+  }, []); // Boş bağımlılık: sadece 1 kez çalışır, sorunsuz sayar]);
 
   useEffect(() => {
     const fetchBookAndProgress = async () => {
