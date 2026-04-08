@@ -42,7 +42,6 @@ export default function ReadBook() {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalMinutes, setTotalMinutes] = useState(0);
-  const [startTime] = useState(Date.now());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [scale, setScale] = useState(1.0);
@@ -52,9 +51,52 @@ export default function ReadBook() {
   const [quote, setQuote] = useState("");
   const [userSearch, setUserSearch] = useState("");
 
+  // Anti-Cheat Variables
+  const [activeSeconds, setActiveSeconds] = useState(0);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [isIdle, setIsIdle] = useState(false);
+  const IDLE_THRESHOLD = 60000; // 60 saniye hareketsizlik limiti
+  const MIN_READ_TIME_PER_PAGE = 10; // Bir sayfa için minimum 10 saniye aktiflik gerek
+
   const filteredParticipants = profiles.filter(p => 
     p.full_name.toLowerCase().includes(userSearch.toLowerCase())
   );
+
+  // Aktivite Takipçisi (Anti-Hile Mekanizması)
+  useEffect(() => {
+    const handleUserActivity = () => {
+      setLastActivity(Date.now());
+      setIsIdle(false);
+    };
+
+    window.addEventListener("mousemove", handleUserActivity);
+    window.addEventListener("keydown", handleUserActivity);
+    window.addEventListener("scroll", handleUserActivity);
+    window.addEventListener("click", handleUserActivity);
+    window.addEventListener("touchstart", handleUserActivity);
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivity;
+      const isWindowActive = document.visibilityState === "visible";
+
+      if (timeSinceLastActivity < IDLE_THRESHOLD && isWindowActive) {
+        setActiveSeconds(prev => prev + 1);
+        setIsIdle(false);
+      } else {
+        setIsIdle(true);
+      }
+    }, 1000);
+
+    return () => {
+      window.removeEventListener("mousemove", handleUserActivity);
+      window.removeEventListener("keydown", handleUserActivity);
+      window.removeEventListener("scroll", handleUserActivity);
+      window.removeEventListener("click", handleUserActivity);
+      window.removeEventListener("touchstart", handleUserActivity);
+      clearInterval(interval);
+    };
+  }, [lastActivity]);
 
   useEffect(() => {
     const fetchBookAndProgress = async () => {
@@ -112,22 +154,17 @@ export default function ReadBook() {
     setNumPages(numPages);
   };
 
-  const handleNextPage = async () => {
-    if (!user || !book || (numPages && currentPage >= numPages)) return;
+  const handleSaveProgress = async (targetPage: number) => {
+    if (!user || !book) return;
 
-    setSaving(true);
-    const nextPage = currentPage + 1;
+    // Sadece aktif geçen süreyi dakikaya çevirip ekle
+    const sessionMinutes = Math.min(activeSeconds / 60, 30); // Bir sayfada tek seferde max 30 dk sayılabilir
+
     const total = numPages || book.total_pages;
-    // Sayısal güvenliği sağla (NaN'ı önle)
     let progressPercent = 0;
     if (total > 0) {
-      progressPercent = Number(((nextPage / total) * 100).toFixed(2));
+      progressPercent = Number(((targetPage / total) * 100).toFixed(2));
     }
-    if (isNaN(progressPercent)) progressPercent = 0;
-
-    const now = Date.now();
-    const timeSpentMs = now - startTime;
-    const sessionMinutes = timeSpentMs / (1000 * 60);
 
     try {
       const { error: upsertError } = await supabase
@@ -135,29 +172,57 @@ export default function ReadBook() {
         .upsert({
           user_id: user.id,
           book_id: book.id,
-          current_page: nextPage,
+          current_page: targetPage,
           progress_percent: progressPercent,
           total_minutes: Number(totalMinutes) + sessionMinutes,
           last_read_at: new Date().toISOString(),
-          is_completed: nextPage >= total
+          is_completed: targetPage >= total
         }, { onConflict: 'user_id,book_id' });
 
-      if (upsertError) {
-        console.error("Supabase Save Error:", upsertError);
-        toast.error(`Veritabanı Hatası: ${upsertError.message}`);
-        throw upsertError;
-      }
+      if (upsertError) throw upsertError;
       
-      setCurrentPage(nextPage);
-    } catch (error: any) {
-      console.error("Progress Save Failed:", error);
-      if (!error.message?.includes("Veritabanı")) {
-        toast.error(`İlerleme kaydedilemedi: ${error.message || "Bilinmeyen hata"}`);
-      }
-    } finally {
-      setSaving(false);
+      setTotalMinutes(prev => Number(prev) + sessionMinutes);
+      setActiveSeconds(0);
+      return true;
+    } catch (error) {
+      console.error("Save failed:", error);
+      return false;
     }
   };
+
+  const handleNextPage = async () => {
+    if (!user || !book || (numPages && currentPage >= numPages)) return;
+
+    if (activeSeconds < MIN_READ_TIME_PER_PAGE) {
+      toast.warning("Sayfayı çok hızlı geçtiniz!", {
+        description: "Okuma sürenizin sayılması için sayfada aktif vakit geçirmelisiniz."
+      });
+    }
+
+    setSaving(true);
+    const success = await handleSaveProgress(currentPage + 1);
+    if (success) setCurrentPage(currentPage + 1);
+    setSaving(false);
+  };
+
+  const handlePrevPage = async () => {
+    if (currentPage <= 1) return;
+    setSaving(true);
+    const success = await handleSaveProgress(currentPage - 1);
+    if (success) setCurrentPage(currentPage - 1);
+    setSaving(false);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Not: beforeunload içinde async işler garanti değildir ama denemekte fayda var
+      if (activeSeconds > 5) {
+        handleSaveProgress(currentPage);
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [activeSeconds, currentPage]);
 
   const isLastPage = numPages ? currentPage >= numPages : false;
 
@@ -192,6 +257,18 @@ export default function ReadBook() {
         </div>
 
         <div className="flex items-center gap-2">
+          {isIdle && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full animate-pulse">
+              <Clock className="w-3 h-3 text-amber-500" />
+              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Hareketsizlik: Süre Durdu</span>
+            </div>
+          )}
+          {!isIdle && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Okuma Takip Ediliyor</span>
+            </div>
+          )}
           <Button variant="outline" size="icon" onClick={() => setScale(s => Math.max(0.5, s - 0.1))} className="h-8 w-8 md:h-10 md:w-10 border-white/5 bg-white/5"><Minimize2 className="w-4 h-4" /></Button>
           <Button variant="outline" size="icon" onClick={() => setScale(s => Math.min(2, s + 0.1))} className="h-8 w-8 md:h-10 md:w-10 border-white/5 bg-white/5"><Maximize2 className="w-4 h-4" /></Button>
         </div>
@@ -199,6 +276,14 @@ export default function ReadBook() {
 
       {/* Main Content: The PDF */}
       <div className="flex-1 flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar pt-20 pb-32">
+        {/* Mobile Status Indicator */}
+        {isIdle && (
+          <div className="md:hidden mb-4 flex items-center gap-2 px-3 py-2 bg-amber-500/20 border border-amber-500/30 rounded-xl w-full justify-center animate-pulse">
+            <Clock className="w-3 h-3 text-amber-500" />
+            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Süre Duraklatıldı</span>
+          </div>
+        )}
+
         <div className="relative group transition-all duration-500 hover:scale-[1.005]">
           <Document
             file={book?.pdf_url}
@@ -348,6 +433,16 @@ export default function ReadBook() {
                     </div>
                   </DialogContent>
                 </Dialog>
+
+                <Button
+                  onClick={handlePrevPage}
+                  disabled={saving || currentPage <= 1}
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 md:h-12 md:w-12 rounded-xl md:rounded-2xl border-white/10 hover:bg-white/10 bg-white/5"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
 
                 <Button
                   onClick={handleNextPage}
