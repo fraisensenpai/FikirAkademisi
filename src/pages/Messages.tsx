@@ -38,6 +38,11 @@ interface Message {
   book?: { title: string };
   message_reactions?: Reaction[];
   sender?: { full_name: string };
+  reply_to_id?: string;
+  parent_message?: {
+    content: string;
+    sender: { full_name: string };
+  };
 }
 
 const COMMON_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
@@ -48,6 +53,7 @@ export default function Messages() {
   const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -74,11 +80,36 @@ export default function Messages() {
       .channel("messages-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        () => {
-          console.log("Realtime: Mesaj değişikliği algılandı");
-          fetchMessages();
-          fetchItems();
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const newMsg = payload.new as Message;
+          
+          // Eğer mesaj şu anki sohbete aitse listeye ekle
+          const isForCurrentChat = selectedRecipient?.isGroup 
+            ? newMsg.group_id === selectedRecipient.id
+            : (newMsg.sender_id === selectedRecipient?.id && newMsg.receiver_id === user?.id) ||
+              (newMsg.sender_id === user?.id && newMsg.receiver_id === selectedRecipient?.id);
+
+          if (isForCurrentChat) {
+            // Gönderen ismini bul
+            const sender = items.find(it => it.id === newMsg.sender_id);
+            const senderName = newMsg.sender_id === user?.id ? "Siz" : (sender?.full_name || "Bilinmeyen Kullanıcı");
+            
+            setMessages(prev => {
+              if (prev.some(m => m.id === newMsg.id)) return prev;
+              return [...prev, { ...newMsg, sender: { full_name: senderName } }];
+            });
+            fetchItems(); // Mesaj listesindeki sıralamayı/okunmadı bilgisini güncelle
+          } else {
+            fetchItems(); // Başka birinden mesaj geldiyse listeyi güncelle
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "messages" },
+        (payload) => {
+          setMessages(prev => prev.filter(m => m.id !== payload.old.id));
         }
       )
       .on(
@@ -254,7 +285,8 @@ export default function Messages() {
         .select(`
           *,
           book:books(title),
-          message_reactions(id, emoji, user_id)
+          message_reactions(id, emoji, user_id),
+          reply_to:messages(id, content, sender_id)
         `);
 
       if (selectedRecipient.isGroup) {
@@ -270,9 +302,20 @@ export default function Messages() {
       const messagesWithNames = data?.map((m: any) => {
         const sender = items.find(it => it.id === m.sender_id);
         const senderName = m.sender_id === user.id ? "Siz" : (sender?.full_name || "Bilinmeyen Kullanıcı");
+        
+        let parentMsgData = null;
+        if (m.reply_to) {
+          const parentSender = items.find(it => it.id === m.reply_to.sender_id);
+          parentMsgData = {
+            content: m.reply_to.content,
+            sender: { full_name: m.reply_to.sender_id === user.id ? "Siz" : (parentSender?.full_name || "Kullanıcı") }
+          };
+        }
+
         return {
           ...m,
-          sender: { full_name: senderName }
+          sender: { full_name: senderName },
+          parent_message: parentMsgData
         };
       });
 
@@ -301,16 +344,23 @@ export default function Messages() {
       content: newMessage 
     };
 
+    if (replyTo) {
+      payload.reply_to_id = replyTo.id;
+    }
+
     if (selectedRecipient.isGroup) {
       payload.group_id = selectedRecipient.id;
     } else {
       payload.receiver_id = selectedRecipient.id;
     }
 
-    await (supabase as any).from("messages").insert(payload);
-    setNewMessage("");
-    fetchMessages();
-    fetchItems();
+    const { error } = await (supabase as any).from("messages").insert(payload);
+    if (error) {
+      toast.error("Mesaj gönderilemedi");
+    } else {
+      setNewMessage("");
+      setReplyTo(null);
+    }
   };
 
   const deleteMessage = async (id: string) => {
@@ -441,40 +491,48 @@ export default function Messages() {
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2">
-                        {msg.sender_id === user?.id && (
-                          <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" onClick={() => deleteMessage(msg.id)} className="h-8 w-8 hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Smile className="w-4 h-4" /></Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
-                                {COMMON_EMOJIS.map(emoji => (
-                                  <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
-                                ))}
-                              </PopoverContent>
-                            </Popover>
+                        <div className="flex items-center gap-2">
+                          {msg.sender_id === user?.id && (
+                            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-8 w-8 hover:text-primary"><Send className="w-4 h-4 -rotate-90" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteMessage(msg.id)} className="h-8 w-8 hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Smile className="w-4 h-4" /></Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
+                                  {COMMON_EMOJIS.map(emoji => (
+                                    <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
+                                  ))}
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          )}
+                          <div className={`p-4 rounded-2xl shadow-xl transition-all relative ${msg.sender_id === user?.id ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"}`}>
+                            {msg.parent_message && (
+                              <div className={`mb-2 p-2 rounded-lg text-xs border-l-4 leading-relaxed ${msg.sender_id === user?.id ? "bg-white/10 border-white/30" : "bg-primary/5 border-primary"}`}>
+                                <p className="font-bold opacity-70 mb-0.5">{msg.parent_message.sender.full_name}</p>
+                                <p className="opacity-60 line-clamp-2">{msg.parent_message.content}</p>
+                              </div>
+                            )}
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                           </div>
-                        )}
-                        <div className={`p-4 rounded-2xl shadow-xl transition-all ${msg.sender_id === user?.id ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"}`}>
-                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          {msg.sender_id !== user?.id && (
+                            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-8 w-8 hover:text-primary"><Send className="w-4 h-4 -rotate-90" /></Button>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Smile className="w-4 h-4" /></Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
+                                  {COMMON_EMOJIS.map(emoji => (
+                                    <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
+                                  ))}
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          )}
                         </div>
-                        {msg.sender_id !== user?.id && (
-                          <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Smile className="w-4 h-4" /></Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
-                                {COMMON_EMOJIS.map(emoji => (
-                                  <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
-                                ))}
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        )}
-                      </div>
                       
                       {renderReactions(msg)}
 
@@ -494,9 +552,18 @@ export default function Messages() {
             </ScrollArea>
 
             <div className="p-6 bg-background/80 backdrop-blur-xl border-t border-white/5">
+              {replyTo && (
+                <div className="mb-3 p-3 bg-muted/50 rounded-xl border-l-4 border-primary flex items-center justify-between animate-in slide-in-from-bottom-2">
+                  <div className="overflow-hidden">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{replyTo.sender?.full_name} kişisine yanıt veriliyor</p>
+                    <p className="text-xs text-muted-foreground truncate">{replyTo.content}</p>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setReplyTo(null)} className="h-8 w-8"><Trash2 className="w-4 h-4" /></Button>
+                </div>
+              )}
               <form onSubmit={sendMessage} className="flex gap-4">
-                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder={`${selectedRecipient.full_name} grubuna mesaj yaz...`} className="flex-1 bg-white/5 border-white/10 h-14 px-6 rounded-2xl" />
-                <Button type="submit" size="lg" className="h-14 w-14 rounded-2xl"><Send className="w-6 h-6" /></Button>
+                <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder={`${selectedRecipient.full_name} ${selectedRecipient.isGroup ? 'grubuna' : 'kişisine'} mesaj yaz...`} className="flex-1 bg-white/5 border-white/10 h-14 px-6 rounded-2xl" />
+                <Button type="submit" size="lg" className="h-14 w-14 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></Button>
               </form>
             </div>
           </>
