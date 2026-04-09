@@ -76,39 +76,43 @@ export default function Messages() {
   useEffect(() => {
     if (!user) return;
     
+    const channelId = selectedRecipient?.id || "global";
     const channel = supabase
-      .channel("messages-realtime")
+      .channel(`chat-${channelId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
+          console.log("Realtime: Yeni mesaj geldi!", payload);
           const newMsg = payload.new as Message;
           
-          // Eğer mesaj şu anki sohbete aitse listeye ekle
+          // Mevcut açık olan sohbete mi ait kontrol et
           const isForCurrentChat = selectedRecipient?.isGroup 
             ? newMsg.group_id === selectedRecipient.id
             : (newMsg.sender_id === selectedRecipient?.id && newMsg.receiver_id === user?.id) ||
               (newMsg.sender_id === user?.id && newMsg.receiver_id === selectedRecipient?.id);
 
           if (isForCurrentChat) {
-            // Gönderen ismini bul
+            // İsimleri eşleştir (items state'inden)
             const sender = items.find(it => it.id === newMsg.sender_id);
             const senderName = newMsg.sender_id === user?.id ? "Siz" : (sender?.full_name || "Kullanıcı");
             
             setMessages(prev => {
+              // Mükerrer kaydı önle
               if (prev.some(m => m.id === newMsg.id)) return prev;
               return [...prev, { ...newMsg, sender: { full_name: senderName } }];
             });
-            fetchItems();
-          } else {
-            fetchItems();
           }
+          
+          // Her durumda sol taraftaki listeyi (son mesaj/okunmadı) güncelle
+          fetchItems();
         }
       )
       .on(
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "messages" },
         (payload) => {
+          console.log("Realtime: Mesaj silindi!", payload);
           setMessages(prev => prev.filter(m => m.id !== payload.old.id));
           fetchItems();
         }
@@ -116,7 +120,9 @@ export default function Messages() {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "messages" },
-        () => {
+        (payload) => {
+          console.log("Realtime: Mesaj güncellendi (okundu bilgisi vb)!", payload);
+          // Güncelleme durumunda (is_read vb) listeyi yenile
           fetchMessages();
           fetchItems();
         }
@@ -126,9 +132,12 @@ export default function Messages() {
         { event: "*", schema: "public", table: "message_reactions" },
         () => fetchMessages()
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Realtime durum (${channelId}):`, status);
+      });
 
     return () => {
+      console.log(`Realtime kanal kapatılıyor: ${channelId}`);
       supabase.removeChannel(channel);
     };
   }, [user, items, selectedRecipient?.id]);
