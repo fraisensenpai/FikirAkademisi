@@ -327,8 +327,8 @@ export default function Messages() {
         const senderName = m.sender_id === user.id ? "Siz" : (sender?.full_name || "Bilinmeyen Kullanıcı");
         
         let parentMsgData = null;
-        if (m.reply_to) {
-          const parentSender = items.find(it => it.id === m.reply_to.sender_id);
+        if (m.reply_to_id && m.reply_to) {
+          const parentSender = itemsRef.current.find(it => it.id === m.reply_to.sender_id);
           parentMsgData = {
             content: m.reply_to.content,
             sender: { full_name: m.reply_to.sender_id === user.id ? "Siz" : (parentSender?.full_name || "Kullanıcı") }
@@ -532,7 +532,7 @@ export default function Messages() {
                             </div>
                           )}
                           <div className={`p-4 rounded-2xl shadow-xl transition-all relative ${msg.sender_id === user?.id ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"}`}>
-                            {msg.parent_message && (
+                            {msg.parent_message?.content && (
                               <div className={`mb-2 p-2 rounded-lg text-xs border-l-4 leading-relaxed ${msg.sender_id === user?.id ? "bg-white/10 border-white/30" : "bg-primary/5 border-primary"}`}>
                                 <p className="font-bold opacity-70 mb-0.5">{msg.parent_message.sender.full_name}</p>
                                 <p className="opacity-60 line-clamp-2">{msg.parent_message.content}</p>
