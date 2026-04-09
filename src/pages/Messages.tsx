@@ -57,6 +57,12 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<Profile[]>(items);
+
+  // itemsRef her değiştiğinde güncel kalsın
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   // Kendi aktifliğimizi güncelle
   useEffect(() => {
@@ -93,12 +99,11 @@ export default function Messages() {
               (newMsg.sender_id === user?.id && newMsg.receiver_id === selectedRecipient?.id);
 
           if (isForCurrentChat) {
-            // İsimleri eşleştir (items state'inden)
-            const sender = items.find(it => it.id === newMsg.sender_id);
+            // İsimleri eşleştir (itemsRef'ten güncel çek)
+            const sender = itemsRef.current.find(it => it.id === newMsg.sender_id);
             const senderName = newMsg.sender_id === user?.id ? "Siz" : (sender?.full_name || "Kullanıcı");
             
             setMessages(prev => {
-              // Mükerrer kaydı önle
               if (prev.some(m => m.id === newMsg.id)) return prev;
               return [...prev, { ...newMsg, sender: { full_name: senderName } }];
             });
@@ -140,7 +145,7 @@ export default function Messages() {
       console.log(`Realtime kanal kapatılıyor: ${channelId}`);
       supabase.removeChannel(channel);
     };
-  }, [user, items, selectedRecipient?.id]);
+  }, [user, selectedRecipient?.id]);
 
   useEffect(() => {
     if (selectedRecipient) {
