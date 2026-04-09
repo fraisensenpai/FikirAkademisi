@@ -20,6 +20,7 @@ import BookRequests from "./pages/BookRequests";
 import TransferProgress from "./pages/TransferProgress";
 import ManageTransfers from "./pages/ManageTransfers";
 import ManageGroups from "./pages/ManageGroups";
+import Updates from "./pages/Updates";
 import NotFound from "./pages/NotFound";
 
 import ResetPassword from "./pages/ResetPassword";
@@ -51,6 +52,7 @@ const App = () => (
                 <Route path="manage-transfers" element={<ManageTransfers />} />
                 <Route path="groups" element={<ManageGroups />} />
                 <Route path="messages" element={<Messages />} />
+                <Route path="updates" element={<Updates />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

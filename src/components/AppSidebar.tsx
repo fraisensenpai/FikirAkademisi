@@ -24,6 +24,7 @@ import {
   ChevronRight,
   ArrowLeftRight,
   ClipboardCheck,
+  History,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -52,6 +53,7 @@ export function AppSidebar() {
     { title: "Aktarım Talepleri", url: "/dashboard/manage-transfers", icon: ClipboardCheck },
     { title: "İstatistikler", url: "/dashboard/analytics", icon: BarChart3 },
     { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
+    { title: "Gelişim Günlüğü", url: "/dashboard/updates", icon: History },
   ];
 
   const teacherItems = [
@@ -62,6 +64,7 @@ export function AppSidebar() {
     { title: "Aktarım Talepleri", url: "/dashboard/manage-transfers", icon: ClipboardCheck },
     { title: "Raporlar", url: "/dashboard/analytics", icon: BarChart3 },
     { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
+    { title: "Gelişim Günlüğü", url: "/dashboard/updates", icon: History },
   ];
 
   const studentItems = [
@@ -69,6 +72,7 @@ export function AppSidebar() {
     { title: "Kitaplarım", url: "/dashboard/books", icon: Library },
     { title: "Kitap Aktarımı", url: "/dashboard/transfer", icon: ArrowLeftRight },
     { title: "Mesajlar", url: "/dashboard/messages", icon: MessageSquare },
+    { title: "Gelişim Günlüğü", url: "/dashboard/updates", icon: History },
   ];
 
   const menuItems = role === "admin" || role === "developer" 
