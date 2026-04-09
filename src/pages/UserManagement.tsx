@@ -3,11 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Users, Search, Edit2, Save } from "lucide-react";
+import { Search, Edit2, Save, Ban, Unlock } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -19,6 +18,8 @@ interface UserProfile {
   class_name: string | null;
   last_device?: string | null;
   is_approved?: boolean;
+  is_banned?: boolean;
+  banned_by_name?: string | null;
 }
 
 export default function UserManagement() {
@@ -31,7 +32,7 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     const { data } = await supabase.from("profiles").select("*").order("full_name");
-    setUsers(data || []);
+    setUsers(data as any || []);
     setLoading(false);
   };
 
@@ -67,6 +68,29 @@ export default function UserManagement() {
     fetchUsers();
   };
 
+  const handleBanToggle = async (targetUser: UserProfile) => {
+    if (!profile) return;
+    
+    const newStatus = !targetUser.is_banned;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ 
+        is_banned: newStatus,
+        banned_by_id: newStatus ? profile.id : null,
+        banned_by_name: newStatus ? profile.full_name : null,
+        ban_at: newStatus ? new Date().toISOString() : null
+      } as any)
+      .eq("id", targetUser.id);
+
+    if (error) {
+      toast.error("İşlem başarısız!");
+      return;
+    }
+    
+    toast.success(newStatus ? `${targetUser.full_name} yasaklandı!` : "Yasak kaldırıldı.");
+    fetchUsers();
+  };
+
   const filtered = users.filter((u) =>
     u.full_name.toLowerCase().includes(search.toLowerCase()) ||
     u.school_number?.includes(search) ||
@@ -92,7 +116,7 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in p-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Kullanıcı Yönetimi</h2>
@@ -110,29 +134,36 @@ export default function UserManagement() {
         />
       </div>
 
-      <div className="glass-card overflow-hidden">
+      <div className="glass-card overflow-hidden rounded-3xl border border-white/5 bg-background/50 backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Ad Soyad</th>
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Okul No</th>
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Sınıf</th>
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Rol</th>
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">Durum</th>
-                <th className="text-left p-3 text-sm font-medium text-muted-foreground">İşlem</th>
+              <tr className="border-b border-white/5 bg-muted/20">
+                <th className="text-left p-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">Ad Soyad</th>
+                <th className="text-left p-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">Okul No</th>
+                <th className="text-left p-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">Sınıf</th>
+                <th className="text-left p-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">Rol</th>
+                <th className="text-left p-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">Durum</th>
+                <th className="text-left p-4 text-sm font-bold text-muted-foreground uppercase tracking-widest">İşlem</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-white/5">
               {filtered.map((u) => (
-                <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-3 font-medium text-foreground">{u.full_name || "—"}</td>
-                  <td className="p-3 text-muted-foreground">{u.school_number || "—"}</td>
-                  <td className="p-3 text-muted-foreground">{u.class_name || "—"}</td>
-                  <td className="p-3">
+                <tr key={u.id} className={`hover:bg-white/5 transition-colors ${u.is_banned ? "bg-red-500/5 opacity-80" : ""}`}>
+                  <td className="p-4 font-medium text-foreground">
+                    <div className="flex items-center gap-2">
+                       <span className={u.is_banned ? "line-through opacity-50" : ""}>{u.full_name || "—"}</span>
+                      {u.is_banned && (
+                        <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full uppercase font-black">Yasaklı</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-muted-foreground">{u.school_number || "—"}</td>
+                  <td className="p-4 text-muted-foreground">{u.class_name || "—"}</td>
+                  <td className="p-4">
                     {editingId === u.id ? (
                       <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="w-32 bg-white/5 border-white/10">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -143,42 +174,56 @@ export default function UserManagement() {
                         </SelectContent>
                       </Select>
                     ) : (
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleBadgeColors[u.role]}`}>
+                      <span className={`px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-tighter ${roleBadgeColors[u.role]}`}>
                         {roleLabels[u.role]}
                       </span>
                     )}
                   </td>
-                  <td className="p-3">
+                  <td className="p-4">
                     {u.role === "teacher" ? (
                       <Button 
                         size="sm" 
-                        variant={(u as any).is_approved ? "outline" : "destructive"} 
-                        className="h-7 text-[10px] uppercase font-bold tracking-widest"
-                        onClick={() => handleApprovalChange(u.id, (u as any).is_approved)}
+                        variant={u.is_approved ? "outline" : "destructive"} 
+                        className="h-8 text-[10px] uppercase font-black tracking-widest rounded-xl"
+                        onClick={() => handleApprovalChange(u.id, !!u.is_approved)}
                       >
-                        {(u as any).is_approved ? "Onaylı" : "Onay Bekliyor"}
+                        {u.is_approved ? "Onaylı" : "Onay Bekliyor"}
                       </Button>
                     ) : (
-                      <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest font-bold">Gerekmez</span>
+                      <span className="text-[10px] text-muted-foreground/30 uppercase tracking-widest font-black">Gerekmez</span>
                     )}
                   </td>
-                  <td className="p-3">
-                    {editingId === u.id ? (
-                      <Button size="sm" onClick={() => handleRoleChange(u.id)}>
-                        <Save className="w-3 h-3 mr-1" /> Kaydet
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingId(u.id);
-                          setEditRole(u.role);
-                        }}
-                      >
-                        <Edit2 className="w-3 h-3 mr-1" /> Düzenle
-                      </Button>
-                    )}
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      {editingId === u.id ? (
+                        <Button size="sm" onClick={() => handleRoleChange(u.id)} className="rounded-xl">
+                          <Save className="w-4 h-4 mr-1" /> Kaydet
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingId(u.id);
+                            setEditRole(u.role);
+                          }}
+                          className="rounded-xl hover:bg-white/5"
+                        >
+                          <Edit2 className="w-4 h-4 mr-1" /> Düzenle
+                        </Button>
+                      )}
+                      
+                      {profile?.id !== u.id && (
+                        <Button
+                          size="sm"
+                          variant={u.is_banned ? "default" : "destructive"}
+                          className={`h-8 px-3 text-[10px] uppercase font-black rounded-xl transition-all ${u.is_banned ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white border border-red-500/20'}`}
+                          onClick={() => handleBanToggle(u)}
+                        >
+                          {u.is_banned ? <><Unlock className="w-3 h-3 mr-1"/> Yasağı Kaldır</> : <><Ban className="w-3 h-3 mr-1"/> Yasakla</>}
+                        </Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

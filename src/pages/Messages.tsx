@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Send, BookOpen, User, Users, Search, Trash2, ArrowLeft, Check, CheckCheck, Smile, Phone, Video, Info } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Ban, Lock } from "lucide-react";
 
 interface Profile {
   id: string;
@@ -48,7 +49,7 @@ interface Message {
 const COMMON_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🙏"];
 
 export default function Messages() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [items, setItems] = useState<Profile[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<Profile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -421,6 +422,37 @@ export default function Messages() {
       </div>
     );
   };
+
+  if (profile?.is_banned) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-8rem)] bg-background/50 backdrop-blur-xl rounded-3xl border border-red-500/10 overflow-hidden shadow-2xl p-10 text-center space-y-6">
+        <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 animate-pulse">
+          <Ban className="w-12 h-12" />
+        </div>
+        <div className="space-y-3 max-w-md">
+          <h2 className="text-3xl font-display font-bold text-foreground">Erişim Kısıtlandı</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Bazı sebeplerden ötürü Fikir Akademisi platformunda mesaj göndermekten ve diğer kullanıcıları görüntülemekten yasaklandınız.
+          </p>
+        </div>
+        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl w-full max-w-sm">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground font-medium italic">Yasaklayan Yetkili:</span>
+            <span className="text-red-400 font-bold uppercase tracking-wider">{profile?.banned_by_name || "Sistem"}</span>
+          </div>
+          {profile?.ban_at && (
+            <div className="flex items-center justify-between text-sm mt-2">
+              <span className="text-muted-foreground font-medium italic">Tarih:</span>
+              <span className="text-muted-foreground opacity-60">{new Date(profile.ban_at).toLocaleDateString('tr-TR')}</span>
+            </div>
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground/30 uppercase tracking-[0.2em] font-black italic">
+          Fikir Akademisi Güvenlik Sistemi
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-8rem)] bg-background/50 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden shadow-2xl relative">

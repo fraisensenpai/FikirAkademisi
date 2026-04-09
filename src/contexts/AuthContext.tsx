@@ -13,6 +13,9 @@ interface Profile {
   class_name: string | null;
   last_device?: string | null;
   color_theme?: string | null;
+  is_banned?: boolean;
+  banned_by_name?: string | null;
+  ban_at?: string | null;
 }
 
 interface AuthContextType {
@@ -64,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     const { data } = await (supabase.from("profiles") as any)
-      .select("id, full_name, role, school_number, class_name, last_device, color_theme")
+      .select("id, full_name, role, school_number, class_name, last_device, color_theme, is_banned, banned_by_name, ban_at")
       .eq("id", userId)
       .single();
     
