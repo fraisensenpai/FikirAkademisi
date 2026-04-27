@@ -26,7 +26,7 @@ export default function DashboardLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background relative overflow-hidden selection:bg-primary/20">
+      <div className="min-h-screen flex w-full bg-background relative selection:bg-primary/20">
         {/* Subtle Mesh Background for Dashboard Context */}
         <div className="fixed inset-0 mesh-gradient opacity-40 pointer-events-none" />
         

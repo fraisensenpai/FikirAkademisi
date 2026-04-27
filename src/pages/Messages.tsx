@@ -538,7 +538,7 @@ export default function Messages() {
                     {selectedRecipient.isGroup && msg.sender_id !== user?.id && (
                       <span className="text-[10px] font-bold text-muted-foreground mb-1 ml-4 uppercase tracking-widest">{msg.sender?.full_name}</span>
                     )}
-                    <div className="max-w-[80%] space-y-1 relative">
+                    <div className="max-w-[85%] md:max-w-[80%] space-y-1 relative">
                       {msg.quoted_text && (
                         <div className="bg-muted/40 p-3 rounded-xl border-l-4 border-primary text-xs italic mb-1">
                           <p className="text-[10px] font-bold text-primary flex items-center gap-1 mb-1 opacity-70"><BookOpen className="w-3 h-3" /> {msg.book?.title}</p>
@@ -548,7 +548,7 @@ export default function Messages() {
                       
                         <div className="flex items-center gap-2">
                           {msg.sender_id === user?.id && (
-                            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
                               <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-8 w-8 hover:text-primary"><Send className="w-4 h-4 -rotate-90" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => deleteMessage(msg.id)} className="h-8 w-8 hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
                               <Popover>
@@ -573,7 +573,7 @@ export default function Messages() {
                             <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                           </div>
                           {msg.sender_id !== user?.id && (
-                            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
                               <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-8 w-8 hover:text-primary"><Send className="w-4 h-4 -rotate-90" /></Button>
                               <Popover>
                                 <PopoverTrigger asChild>
