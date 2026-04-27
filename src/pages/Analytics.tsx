@@ -58,9 +58,9 @@ export default function Analytics() {
           is_completed,
           current_page,
           manual_pages_read,
-          book:books(id, title, total_pages),
-          book_reviews:book_reviews(thoughts, rating, book_id)
-        )
+          book:books(id, title, total_pages)
+        ),
+        book_reviews(thoughts, rating, book_id)
       `)
       .eq('role', 'student');
 
@@ -107,9 +107,9 @@ export default function Analytics() {
           manualPercent: Math.min(100, (manualPages / totalPages) * 100),
           isCompleted: d.is_completed,
           minutes: Number(d.total_minutes),
-          review: d.book_reviews && d.book_reviews.length > 0 ? {
-            thoughts: d.book_reviews[0].thoughts,
-            rating: d.book_reviews[0].rating
+          review: studentData.book_reviews?.find((r: any) => r.book_id === d.book?.id) ? {
+            thoughts: studentData.book_reviews.find((r: any) => r.book_id === d.book?.id).thoughts,
+            rating: studentData.book_reviews.find((r: any) => r.book_id === d.book?.id).rating
           } : undefined
         };
       });
