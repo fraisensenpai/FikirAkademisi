@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { BookOpen, Clock, CheckCircle2, Calendar } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, Calendar, Video, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -18,6 +18,9 @@ interface AssignedBook {
   is_completed: boolean;
   due_date: string | null;
   type: "class" | "personal";
+  movie_id?: string | null;
+  movie_url?: string | null;
+  is_movie: boolean;
 }
 
 export default function Books() {
@@ -40,6 +43,11 @@ export default function Books() {
             title, 
             cover_url, 
             total_pages
+          ),
+          movies (
+            id,
+            title,
+            url
           )
         `)
         .eq("target_class", profile.class_name || "");
@@ -56,6 +64,11 @@ export default function Books() {
             title, 
             cover_url, 
             total_pages
+          ),
+          movies (
+            id,
+            title,
+            url
           )
         `)
         .eq("target_student_id", user.id);
@@ -72,10 +85,9 @@ export default function Books() {
 
       const seen = new Set<string>();
       const uniqueAssignments = allAssignments.filter((a: any) => {
-        // Eğer book_id yoksa ama movie_id varsa bu bir film ödevidir, kitaplar sekmesinde gösterme
-        if (!a.book_id) return false;
-        if (seen.has(a.book_id)) return false;
-        seen.add(a.book_id);
+        const contentId = a.book_id || a.movie_id;
+        if (!contentId || seen.has(contentId)) return false;
+        seen.add(contentId);
         return true;
       });
 
@@ -88,15 +100,22 @@ export default function Books() {
       const merged = uniqueAssignments.map((assignment: any) => {
         const bookProg = (progress || []).find((p: any) => p.book_id === assignment.book_id);
         
-        // Hem books hem de book (takma ad) ihtimalini ve array/object durumunu kontrol et
         const rawBook = assignment.books || assignment.book;
         const bookInfo = Array.isArray(rawBook) ? rawBook[0] : rawBook;
-        
+
+        const rawMovie = assignment.movies || assignment.movie;
+        const movieInfo = Array.isArray(rawMovie) ? rawMovie[0] : rawMovie;
+
+        const isMovie = !!assignment.movie_id;
+
         return {
           id: assignment.id,
           book_id: assignment.book_id,
-          title: bookInfo?.title || "Bilinmeyen Kitap",
+          movie_id: assignment.movie_id,
+          is_movie: isMovie,
+          title: isMovie ? (movieInfo?.title || "Bilinmeyen Film") : (bookInfo?.title || "Bilinmeyen Kitap"),
           cover_url: bookInfo?.cover_url,
+          movie_url: movieInfo?.url,
           total_pages: bookInfo?.total_pages || 0,
           current_page: bookProg?.current_page || 0,
           progress_percent: bookProg?.progress_percent || 0,
@@ -147,7 +166,11 @@ export default function Books() {
               <div className="p-3 md:p-6 space-y-2 md:space-y-4">
                 <div className="flex items-start justify-between">
                   <div className="bg-primary/10 p-1.5 md:p-3 rounded-lg">
-                    <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+                    {book.is_movie ? (
+                      <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-purple-500" />
+                    ) : (
+                      <BookOpen className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {book.is_completed && (
@@ -156,11 +179,8 @@ export default function Books() {
                         Tamam
                       </div>
                     )}
-                    <div className={`text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-full ${book.type === "personal"
-                        ? "bg-purple-500/15 text-purple-500"
-                        : "bg-blue-500/15 text-blue-500"
-                      }`}>
-                      {book.type === "personal" ? "👤 Kişisel" : "📚 Sınıf"}
+                    <div className={`text-[8px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-full ${book.is_movie ? "bg-purple-500/15 text-purple-500" : "bg-blue-500/15 text-blue-500"}`}>
+                      {book.is_movie ? "🎬 Film" : "📚 Kitap"}
                     </div>
                   </div>
                 </div>
@@ -168,8 +188,14 @@ export default function Books() {
                 <div className="min-h-[45px] md:min-h-[80px]">
                   <h3 className="text-xs md:text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">{book.title}</h3>
                   <div className="flex items-center gap-1.5 mt-1 text-[10px] md:text-sm text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    <span>{book.total_pages} s.</span>
+                    {book.is_movie ? (
+                      <TrendingUp className="w-3 h-3" />
+                    ) : (
+                      <>
+                        <Clock className="w-3 h-3" />
+                        <span>{book.total_pages} s.</span>
+                      </>
+                    )}
                     {book.due_date && (
                       <span className="ml-1 text-amber-500 font-medium flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
@@ -179,19 +205,27 @@ export default function Books() {
                   </div>
                 </div>
 
-                <div className="space-y-1 md:space-y-2">
-                  <div className="flex justify-between text-[9px] md:text-xs">
-                    <span className="text-muted-foreground">İlerleme</span>
-                    <span className="font-medium">{Math.round(book.progress_percent)}%</span>
+                {!book.is_movie && (
+                  <div className="space-y-1 md:space-y-2">
+                    <div className="flex justify-between text-[9px] md:text-xs">
+                      <span className="text-muted-foreground">İlerleme</span>
+                      <span className="font-medium">{Math.round(book.progress_percent)}%</span>
+                    </div>
+                    <Progress value={book.progress_percent} className="h-1 md:h-2" />
                   </div>
-                  <Progress value={book.progress_percent} className="h-1 md:h-2" />
-                </div>
+                )}
 
                 <Button
-                  onClick={() => navigate(`/dashboard/read/${book.book_id}`)}
+                  onClick={() => {
+                    if (book.is_movie) {
+                      if (book.movie_url) window.open(book.movie_url, "_blank");
+                    } else {
+                      navigate(`/dashboard/read/${book.book_id}`);
+                    }
+                  }}
                   className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground mt-1 h-7 md:h-10 text-[10px] md:text-sm"
                 >
-                  {book.progress_percent > 0 ? "Devam" : "Başla"}
+                  {book.is_movie ? "İzle" : (book.progress_percent > 0 ? "Devam" : "Başla")}
                 </Button>
               </div>
             </div>
