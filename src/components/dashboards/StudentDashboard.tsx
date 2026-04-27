@@ -33,8 +33,25 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile) return;
     const fetchDashboardData = async () => {
+      // 1. Önce bu öğrenciye atanmış ödevleri (kitap/film) al
+      const { data: classAss } = await supabase
+        .from("assignments")
+        .select("book_id, movie_id")
+        .eq("target_class", profile.class_name || "");
+      
+      const { data: persAss } = await (supabase as any)
+        .from("assignments")
+        .select("book_id, movie_id")
+        .eq("target_student_id", user.id);
+
+      const assignedBookIds = new Set([
+        ...(classAss || []).map(a => a.book_id),
+        ...(persAss || []).map(a => a.book_id)
+      ].filter(Boolean));
+
+      // 2. Sadece ödev olan kitapların okuma verilerini çek
       const { data, error } = await (supabase as any)
         .from("user_books")
         .select(`
@@ -47,12 +64,14 @@ export default function StudentDashboard() {
       if (error) {
         toast.error("Veriler alınırken hata oluştu: " + error.message);
       } else {
-        setActiveBooks(data || []);
+        // Atanmamış kitapları filtrele
+        const filteredData = (data || []).filter((ub: any) => assignedBookIds.has(ub.book_id));
+        setActiveBooks(filteredData);
         
-        const totalMin = data?.reduce((s: any, b: any) => s + Number(b.total_minutes), 0) || 0;
-        const compBooks = data?.filter((b: any) => b.is_completed).length || 0;
-        const avgProg = data?.length 
-          ? data.reduce((s: any, b: any) => s + Number(b.progress_percent), 0) / data.length 
+        const totalMin = filteredData.reduce((s: any, b: any) => s + Number(b.total_minutes), 0) || 0;
+        const compBooks = filteredData.filter((b: any) => b.is_completed).length || 0;
+        const avgProg = filteredData.length 
+          ? filteredData.reduce((s: any, b: any) => s + Number(b.progress_percent), 0) / filteredData.length 
           : 0;
 
         setStats({ totalMinutes: totalMin, completedBooks: compBooks, avgProgress: avgProg });
@@ -60,7 +79,7 @@ export default function StudentDashboard() {
       setLoading(false);
     };
     fetchDashboardData();
-  }, [user]);
+  }, [user, profile]);
 
   if (loading) {
     return (
