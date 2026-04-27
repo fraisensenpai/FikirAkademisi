@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Loader2, Maximize2, Minimize2, Clock, Share2, User, Search } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, Maximize2, Minimize2, Clock, Share2, User, Search, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Document, Page, pdfjs } from "react-pdf";
 import {
@@ -211,7 +211,11 @@ export default function ReadBook() {
   };
 
   const handleNextPage = async () => {
-    if (!user || !book || (numPages && currentPage >= numPages)) return;
+    if (!user || !book) return;
+    
+    // Eğer zaten son sayfadaysak ve tıklanmışsa bitirme işlemini yap
+    const isActuallyLastPage = numPages ? currentPage >= numPages : false;
+    const targetPage = isActuallyLastPage ? (numPages || book.total_pages) : currentPage + 1;
 
     // SERT HİLE ENGELİ: Minimum süre dolmadan kesinlikle geçirilmez
     if (activeSeconds < MIN_READ_TIME_PER_PAGE) {
@@ -224,11 +228,14 @@ export default function ReadBook() {
     }
 
     setSaving(true);
-    const success = await handleSaveProgress(currentPage + 1);
+    const success = await handleSaveProgress(targetPage);
     if (success) {
-      setCurrentPage(currentPage + 1);
-      // If it was the last page and not reviewed yet, show dialog
-      if (currentPage + 1 >= (numPages || book.total_pages) && !hasReviewed) {
+      if (!isActuallyLastPage) {
+        setCurrentPage(targetPage);
+      }
+      
+      // Eğer son sayfadaysak (veya hedef son sayfaysa) ve yorum yapmamışsa panel aç
+      if (targetPage >= (numPages || book.total_pages) && !hasReviewed) {
         setShowReviewDialog(true);
       }
     }
@@ -512,14 +519,22 @@ export default function ReadBook() {
                     🔒 {MIN_READ_TIME_PER_PAGE - activeSeconds}s bekle
                   </Button>
                 ) : (
-                  <Button
+                <Button
                     onClick={handleNextPage}
-                    disabled={saving || isLastPage}
+                    disabled={saving}
                     size="lg"
-                    className="px-6 md:px-8 h-10 md:h-12 rounded-xl md:rounded-2xl bg-primary text-primary-foreground font-bold shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 flex-1 md:flex-none text-xs md:text-sm"
+                    className={`px-6 md:px-8 h-10 md:h-12 rounded-xl md:rounded-2xl font-bold shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 flex-1 md:flex-none text-xs md:text-sm ${
+                      isLastPage ? "bg-emerald-600 text-white" : "bg-primary text-primary-foreground"
+                    }`}
                   >
-                    {saving ? <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> : "Sonraki Sayfa"}
-                    <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
+                    ) : (
+                      <>
+                        {isLastPage ? "Kitabı Bitir" : "Sonraki Sayfa"}
+                        {isLastPage ? <CheckCircle2 className="ml-2 w-4 h-4 md:w-5 md:h-5" /> : <ChevronRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />}
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
