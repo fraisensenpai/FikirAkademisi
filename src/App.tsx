@@ -5,28 +5,38 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Hammer, Cog, ShieldAlert, Loader2 } from "lucide-react";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import DashboardLayout from "./components/DashboardLayout";
-import UserManagement from "./pages/UserManagement";
-import ManageBooks from "./pages/ManageBooks";
-import Assignments from "./pages/Assignments";
-import Analytics from "./pages/Analytics";
-import Books from "./pages/Books";
-import Messages from "./pages/Messages";
-import ReadBook from "./pages/ReadBook";
-import BookRequests from "./pages/BookRequests";
-import TransferProgress from "./pages/TransferProgress";
-import ManageTransfers from "./pages/ManageTransfers";
-import ManageGroups from "./pages/ManageGroups";
-import Updates from "./pages/Updates";
-import NotFound from "./pages/NotFound";
 
-import ResetPassword from "./pages/ResetPassword";
+// Lazy loading components
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
+const UserManagement = lazy(() => import("./pages/UserManagement"));
+const ManageBooks = lazy(() => import("./pages/ManageBooks"));
+const Assignments = lazy(() => import("./pages/Assignments"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Books = lazy(() => import("./pages/Books"));
+const Messages = lazy(() => import("./pages/Messages"));
+const ReadBook = lazy(() => import("./pages/ReadBook"));
+const BookRequests = lazy(() => import("./pages/BookRequests"));
+const TransferProgress = lazy(() => import("./pages/TransferProgress"));
+const ManageTransfers = lazy(() => import("./pages/ManageTransfers"));
+const ManageGroups = lazy(() => import("./pages/ManageGroups"));
+const Updates = lazy(() => import("./pages/Updates"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+
+const LoadingScreen = ({ message }: { message?: string }) => (
+  <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0f1115] gap-4">
+    <Loader2 className="w-12 h-12 text-secondary animate-spin" />
+    <p className="font-display font-black text-[10px] uppercase tracking-[0.3em] text-white/20 animate-pulse">
+      {message || "Dijital Kütüphane Yükleniyor..."}
+    </p>
+  </div>
+);
 
 const Maintenance = ({ message }: { message: string }) => (
   <div className="fixed inset-0 z-[9999] bg-[#0f1115] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
@@ -92,12 +102,7 @@ const AppContent = () => {
   }, []);
 
   if (authLoading || loading) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0f1115] gap-4">
-        <Loader2 className="w-12 h-12 text-secondary animate-spin" />
-        <p className="font-display font-black text-[10px] uppercase tracking-[0.3em] text-white/20 animate-pulse">Dijital Kütüphane Yükleniyor...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const isAuthorized = profile?.role === "admin" || profile?.role === "developer";
@@ -106,27 +111,29 @@ const AppContent = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/dashboard" element={<DashboardLayout />}>
-        <Route index element={<Dashboard />} />
-        <Route path="users" element={<UserManagement />} />
-        <Route path="manage-books" element={<ManageBooks />} />
-        <Route path="assignments" element={<Assignments />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="books" element={<Books />} />
-        <Route path="read/:bookId" element={<ReadBook />} />
-        <Route path="book-requests" element={<BookRequests />} />
-        <Route path="transfer" element={<TransferProgress />} />
-        <Route path="manage-transfers" element={<ManageTransfers />} />
-        <Route path="groups" element={<ManageGroups />} />
-        <Route path="messages" element={<Messages />} />
-        <Route path="updates" element={<Updates />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<LoadingScreen message="Sayfa Hazırlanıyor..." />}>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="manage-books" element={<ManageBooks />} />
+          <Route path="assignments" element={<Assignments />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="books" element={<Books />} />
+          <Route path="read/:bookId" element={<ReadBook />} />
+          <Route path="book-requests" element={<BookRequests />} />
+          <Route path="transfer" element={<TransferProgress />} />
+          <Route path="manage-transfers" element={<ManageTransfers />} />
+          <Route path="groups" element={<ManageGroups />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="updates" element={<Updates />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 
@@ -152,3 +159,4 @@ const App = () => (
 );
 
 export default App;
+

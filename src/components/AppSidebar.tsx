@@ -158,7 +158,7 @@ export function AppSidebar() {
                     asChild
                     isActive={location.pathname === item.url}
                     className={`
-                      w-full h-12 px-4 rounded-2xl transition-all duration-300 group relative overflow-hidden
+                      w-full h-12 px-4 rounded-2xl transition-[background-color,color,box-shadow,transform] duration-300 group relative overflow-hidden
                       ${location.pathname === item.url 
                         ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20" 
                         : "hover:bg-white/5 text-muted-foreground/70 hover:text-foreground"}
@@ -187,7 +187,7 @@ export function AppSidebar() {
             <button
               onClick={toggleMaintenance}
               disabled={isUpdating}
-              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-500 overflow-hidden relative group border ${
+              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-[background-color,color,border-color] duration-500 overflow-hidden relative group border ${
                 isMaintenanceActive 
                   ? "bg-amber-500/10 text-amber-500 border-amber-500/20" 
                   : "bg-white/5 text-muted-foreground/60 hover:bg-white/10 hover:text-foreground border-white/5"
@@ -225,20 +225,20 @@ export function AppSidebar() {
               <p className="text-sm font-black text-foreground truncate italic leading-tight">{profile?.full_name}</p>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50">{role}</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/80">{role}</span>
               </div>
             </div>
           </div>
           <Button 
             variant="ghost" 
             onClick={handleLogout}
-            className="w-full h-10 rounded-xl bg-white/5 hover:bg-destructive shadow-sm hover:text-destructive-foreground transition-all duration-500 group"
+            className="w-full h-10 rounded-xl bg-white/5 hover:bg-destructive shadow-sm hover:text-destructive-foreground transition-[background-color,color,transform] duration-500 group"
           >
             <LogOut className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             <span className="text-[10px] uppercase tracking-widest font-black">Güvenli Çıkış</span>
           </Button>
         </div>
-        <div className="mt-4 px-2 text-[9px] text-center font-bold uppercase tracking-[0.3em] text-muted-foreground/30 italic">
+        <div className="mt-4 px-2 text-[9px] text-center font-bold uppercase tracking-[0.3em] text-muted-foreground/60 italic">
           Saraç Fikir Akademisi v2.0
         </div>
       </SidebarFooter>
