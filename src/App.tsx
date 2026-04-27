@@ -53,10 +53,6 @@ const Maintenance = ({ message }: { message: string }) => (
           <ShieldAlert className="w-3 h-3" />
           <span>TAHMİNİ BİTİŞ: YAKINDA</span>
         </div>
-        <div className="space-y-1 text-center">
-          <p className="text-[10px] text-white/60 font-medium italic">Durum uzun süre kalırsa geliştiricilerle iletişime geçebilirsiniz:</p>
-          <p className="text-[10px] text-secondary font-bold">+90 506 330 34 29 | mstfyzc.29@gmail.com</p>
-        </div>
         <div className="flex gap-2 justify-center pt-2">
           <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
           <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse delay-75" />
