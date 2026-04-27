@@ -117,7 +117,7 @@ export default function ReadBook() {
 
         const { data: progData } = await supabase
           .from("user_books")
-          .select("current_page, total_minutes")
+          .select("current_page, total_minutes, is_completed")
           .eq("user_id", user?.id)
           .eq("book_id", bookId)
           .maybeSingle();
@@ -134,7 +134,12 @@ export default function ReadBook() {
             .eq("book_id", bookId)
             .maybeSingle();
           
-          if (reviewData) setHasReviewed(true);
+          if (reviewData) {
+            setHasReviewed(true);
+          } else if (progData?.is_completed) {
+            // Kitabı bitirmiş ama yorum yapmamışsa hemen panel aç
+            setShowReviewDialog(true);
+          }
         }
       } catch (error: any) {
         toast.error("Kitap yüklenemedi");
