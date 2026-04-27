@@ -50,6 +50,11 @@ export default function ReadBook() {
   const [selectedRecipient, setSelectedRecipient] = useState<string>("");
   const [quote, setQuote] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [reviewThoughts, setReviewThoughts] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Anti-Cheat Variables
   const [activeSeconds, setActiveSeconds] = useState(0);
@@ -120,6 +125,16 @@ export default function ReadBook() {
         if (progData) {
           setCurrentPage(progData.current_page || 1);
           setTotalMinutes(Number(progData.total_minutes) || 0);
+
+          // Check if already reviewed
+          const { data: reviewData } = await (supabase as any)
+            .from("book_reviews")
+            .select("id")
+            .eq("user_id", user?.id)
+            .eq("book_id", bookId)
+            .maybeSingle();
+          
+          if (reviewData) setHasReviewed(true);
         }
       } catch (error: any) {
         toast.error("Kitap yüklenemedi");
@@ -205,8 +220,43 @@ export default function ReadBook() {
 
     setSaving(true);
     const success = await handleSaveProgress(currentPage + 1);
-    if (success) setCurrentPage(currentPage + 1);
+    if (success) {
+      setCurrentPage(currentPage + 1);
+      // If it was the last page and not reviewed yet, show dialog
+      if (currentPage + 1 >= (numPages || book.total_pages) && !hasReviewed) {
+        setShowReviewDialog(true);
+      }
+    }
     setSaving(false);
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!reviewThoughts.trim()) {
+      toast.error("Lütfen kitap hakkındaki düşüncelerinizi yazın.");
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("book_reviews")
+        .upsert({
+          user_id: user?.id,
+          book_id: book?.id,
+          thoughts: reviewThoughts,
+          rating: reviewRating
+        }, { onConflict: 'user_id,book_id' });
+
+      if (error) throw error;
+
+      toast.success("Değerlendirmeniz başarıyla kaydedildi!");
+      setHasReviewed(true);
+      setShowReviewDialog(false);
+    } catch (error: any) {
+      toast.error("Hata oluştu: " + error.message);
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const handlePrevPage = async () => {
@@ -472,6 +522,77 @@ export default function ReadBook() {
           </div>
         </div>
       </div>
+
+      {/* Mandatory Review Dialog */}
+      <Dialog open={showReviewDialog && !hasReviewed} onOpenChange={(open) => {
+          // Prevent closing without review if it's mandatory
+          if (!hasReviewed) return;
+          setShowReviewDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-xl bg-[#1a1c22] border-white/5 text-white rounded-3xl p-8">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-display font-black text-center mb-2 italic">
+              KİTABI BİTİRDİN! <span className="text-primary">🎉</span>
+            </DialogTitle>
+            <p className="text-center text-muted-foreground text-sm font-medium uppercase tracking-widest">
+              Düşüncelerin bizim için çok değerli
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-8 mt-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] block px-1">
+                KİTABI NASIL BULDUN? (1-5)
+              </label>
+              <div className="flex justify-center gap-4 py-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewRating(star)}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold transition-all transform hover:scale-110 active:scale-95 ${
+                      reviewRating >= star 
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105" 
+                        : "bg-white/5 text-white/40 hover:bg-white/10"
+                    }`}
+                  >
+                    {star}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3 text-left">
+              <label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] block px-1">
+                BU KİTAP SANA NE KATTI?
+              </label>
+              <Textarea 
+                placeholder="Kitabı okuyan diğer arkadaşlarına ne söylemek istersin? (Zorunlu)..." 
+                className="min-h-[150px] bg-white/5 border-white/10 rounded-2xl resize-none p-5 text-white text-base focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-white/20"
+                value={reviewThoughts}
+                onChange={(e) => setReviewThoughts(e.target.value)}
+              />
+            </div>
+
+            <Button 
+              onClick={handleReviewSubmit}
+              disabled={submittingReview}
+              className="w-full h-16 rounded-2xl bg-primary text-primary-foreground font-black text-xl shadow-2xl hover:scale-[1.02] active:scale-95 transition-all group"
+            >
+              {submittingReview ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
+              ) : (
+                <>
+                  DEĞERLENDİRMEYİ KAYDET VE BİTİR
+                  <ChevronRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </Button>
+            <p className="text-center text-[10px] text-white/30 uppercase tracking-tighter">
+              Bu değerlendirmeyi yapmadan kitap tam olarak bitmiş sayılmayacaktır.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

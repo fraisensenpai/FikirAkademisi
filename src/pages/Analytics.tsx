@@ -13,6 +13,10 @@ interface StudentBook {
   manualPercent: number;
   isCompleted: boolean;
   minutes: number;
+  review?: {
+    thoughts: string;
+    rating: number;
+  };
 }
 
 interface StudentProfile {
@@ -54,7 +58,8 @@ export default function Analytics() {
           is_completed,
           current_page,
           manual_pages_read,
-          book:books(title, total_pages)
+          book:books(id, title, total_pages),
+          book_reviews:book_reviews(thoughts, rating, book_id)
         )
       `)
       .eq('role', 'student');
@@ -101,7 +106,11 @@ export default function Analytics() {
           sitePercent: Math.min(100, (sitePages / totalPages) * 100),
           manualPercent: Math.min(100, (manualPages / totalPages) * 100),
           isCompleted: d.is_completed,
-          minutes: Number(d.total_minutes)
+          minutes: Number(d.total_minutes),
+          review: d.book_reviews && d.book_reviews.length > 0 ? {
+            thoughts: d.book_reviews[0].thoughts,
+            rating: d.book_reviews[0].rating
+          } : undefined
         };
       });
 
@@ -310,6 +319,22 @@ export default function Analytics() {
                                                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Okuma Süresi</span>
                                                         <span className="text-xs font-black text-emerald-400">{Math.round(b.minutes)} Dk.</span>
                                                     </div>
+
+                                                    {b.review && (
+                                                      <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/10">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                          <span className="text-[9px] font-black text-primary uppercase tracking-[0.1em]">Öğrenci Değerlendirmesi</span>
+                                                          <div className="flex gap-0.5">
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                              <div key={star} className={`w-2 h-2 rounded-full ${star <= b.review!.rating ? 'bg-primary' : 'bg-white/10'}`} />
+                                                            ))}
+                                                          </div>
+                                                        </div>
+                                                        <p className="text-[11px] text-foreground/80 italic leading-relaxed line-clamp-3">
+                                                          "{b.review.thoughts}"
+                                                        </p>
+                                                      </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
