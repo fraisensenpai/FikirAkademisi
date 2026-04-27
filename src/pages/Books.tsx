@@ -34,9 +34,7 @@ export default function Books() {
       const { data: classAssignments, error: classErr } = await supabase
         .from("assignments")
         .select(`
-          id, 
-          book_id, 
-          due_date, 
+          *,
           books (
             id, 
             title, 
@@ -52,9 +50,7 @@ export default function Books() {
       const { data: personalAssignments, error: persErr } = await (supabase as any)
         .from("assignments")
         .select(`
-          id, 
-          book_id, 
-          due_date, 
+          *,
           books (
             id, 
             title, 
@@ -76,7 +72,9 @@ export default function Books() {
 
       const seen = new Set<string>();
       const uniqueAssignments = allAssignments.filter((a: any) => {
-        if (!a.book_id || seen.has(a.book_id)) return false;
+        // Eğer book_id yoksa ama movie_id varsa bu bir film ödevidir, kitaplar sekmesinde gösterme
+        if (!a.book_id) return false;
+        if (seen.has(a.book_id)) return false;
         seen.add(a.book_id);
         return true;
       });
