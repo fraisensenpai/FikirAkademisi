@@ -62,12 +62,16 @@ export default function Books() {
 
       const merged = uniqueAssignments.map((assignment: any) => {
         const bookProg = (progress || []).find((p: any) => p.book_id === assignment.book_id);
+        
+        // Supabase join bazen array bazen object dönebilir, ikisini de kontrol et
+        const bookInfo = Array.isArray(assignment.book) ? assignment.book[0] : assignment.book;
+        
         return {
           id: assignment.id,
           book_id: assignment.book_id,
-          title: assignment.book.title,
-          cover_url: assignment.book.cover_url,
-          total_pages: assignment.book.total_pages,
+          title: bookInfo?.title || "Bilinmeyen Kitap",
+          cover_url: bookInfo?.cover_url,
+          total_pages: bookInfo?.total_pages || 0,
           current_page: bookProg?.current_page || 0,
           progress_percent: bookProg?.progress_percent || 0,
           is_completed: bookProg?.is_completed || false,
