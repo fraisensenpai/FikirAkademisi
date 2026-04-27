@@ -31,25 +31,52 @@ export default function Books() {
 
     try {
       // 1. Sınıfa verilen ödevler
-      const { data: classAssignments } = await supabase
+      const { data: classAssignments, error: classErr } = await supabase
         .from("assignments")
-        .select(`id, book_id, due_date, book:books(id, title, cover_url, total_pages)`)
+        .select(`
+          id, 
+          book_id, 
+          due_date, 
+          books (
+            id, 
+            title, 
+            cover_url, 
+            total_pages
+          )
+        `)
         .eq("target_class", profile.class_name || "");
 
-      // 2. Kişisel ödevler (target_student_id = bu kullanıcı)
-      const { data: personalAssignments } = await (supabase as any)
+      if (classErr) console.error("Class assignments error:", classErr);
+
+      // 2. Kişisel ödevler
+      const { data: personalAssignments, error: persErr } = await (supabase as any)
         .from("assignments")
-        .select(`id, book_id, due_date, book:books(id, title, cover_url, total_pages)`)
+        .select(`
+          id, 
+          book_id, 
+          due_date, 
+          books (
+            id, 
+            title, 
+            cover_url, 
+            total_pages
+          )
+        `)
         .eq("target_student_id", user.id);
+
+      if (persErr) console.error("Personal assignments error:", persErr);
 
       // 3. Birleştir ve tekrarı kaldır
       const allAssignments = [
         ...(classAssignments || []).map((a: any) => ({ ...a, type: "class" })),
         ...(personalAssignments || []).map((a: any) => ({ ...a, type: "personal" })),
       ];
+      
+      console.log("All raw assignments:", allAssignments);
+
       const seen = new Set<string>();
       const uniqueAssignments = allAssignments.filter((a: any) => {
-        if (seen.has(a.book_id)) return false;
+        if (!a.book_id || seen.has(a.book_id)) return false;
         seen.add(a.book_id);
         return true;
       });
@@ -63,8 +90,9 @@ export default function Books() {
       const merged = uniqueAssignments.map((assignment: any) => {
         const bookProg = (progress || []).find((p: any) => p.book_id === assignment.book_id);
         
-        // Supabase join bazen array bazen object dönebilir, ikisini de kontrol et
-        const bookInfo = Array.isArray(assignment.book) ? assignment.book[0] : assignment.book;
+        // Hem books hem de book (takma ad) ihtimalini ve array/object durumunu kontrol et
+        const rawBook = assignment.books || assignment.book;
+        const bookInfo = Array.isArray(rawBook) ? rawBook[0] : rawBook;
         
         return {
           id: assignment.id,
