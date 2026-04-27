@@ -534,11 +534,11 @@ export default function Messages() {
             <ScrollArea className="flex-1 p-6">
               <div className="space-y-6">
                 {messages.map(msg => (
-                  <div key={msg.id} className={`flex flex-col group ${msg.sender_id === user?.id ? "items-end" : "items-start"}`}>
+                  <div key={msg.id} className={`flex flex-col group ${msg.sender_id === user?.id ? "items-end" : "items-start"} w-full px-2`}>
                     {selectedRecipient.isGroup && msg.sender_id !== user?.id && (
                       <span className="text-[10px] font-bold text-muted-foreground mb-1 ml-4 uppercase tracking-widest">{msg.sender?.full_name}</span>
                     )}
-                    <div className="max-w-[85%] md:max-w-[80%] space-y-1 relative">
+                    <div className="max-w-[85%] md:max-w-[75%] space-y-1 relative">
                       {msg.quoted_text && (
                         <div className="bg-muted/40 p-3 rounded-xl border-l-4 border-primary text-xs italic mb-1">
                           <p className="text-[10px] font-bold text-primary flex items-center gap-1 mb-1 opacity-70"><BookOpen className="w-3 h-3" /> {msg.book?.title}</p>
@@ -546,47 +546,33 @@ export default function Messages() {
                         </div>
                       )}
                       
-                        <div className="flex items-center gap-2">
-                          {msg.sender_id === user?.id && (
-                            <div className="flex transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
-                              <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-8 w-8 hover:text-primary"><Send className="w-4 h-4 -rotate-90" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => deleteMessage(msg.id)} className="h-8 w-8 hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Smile className="w-4 h-4" /></Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
-                                  {COMMON_EMOJIS.map(emoji => (
-                                    <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
-                                  ))}
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          )}
-                          <div className={`p-4 rounded-2xl shadow-xl transition-all relative ${msg.sender_id === user?.id ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"}`}>
+                        <div className={`flex items-end gap-2 ${msg.sender_id === user?.id ? "flex-row-reverse" : "flex-row"}`}>
+                          <div className={`p-4 rounded-2xl shadow-xl transition-all relative break-words ${msg.sender_id === user?.id ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted/80 backdrop-blur-md rounded-tl-none border border-white/5"}`}>
                             {msg.parent_message?.content && (
                               <div className={`mb-2 p-2 rounded-lg text-xs border-l-4 leading-relaxed ${msg.sender_id === user?.id ? "bg-white/10 border-white/30" : "bg-primary/5 border-primary"}`}>
                                 <p className="font-bold opacity-70 mb-0.5">{msg.parent_message.sender.full_name}</p>
                                 <p className="opacity-60 line-clamp-2">{msg.parent_message.content}</p>
                               </div>
                             )}
-                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                           </div>
-                          {msg.sender_id !== user?.id && (
-                            <div className="flex transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
-                              <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-8 w-8 hover:text-primary"><Send className="w-4 h-4 -rotate-90" /></Button>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary"><Smile className="w-4 h-4" /></Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
-                                  {COMMON_EMOJIS.map(emoji => (
-                                    <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
-                                  ))}
-                                </PopoverContent>
-                              </Popover>
-                            </div>
-                          )}
+
+                          <div className={`flex flex-col md:flex-row transition-opacity lg:opacity-0 lg:group-hover:opacity-100 ${msg.sender_id === user?.id ? "items-end" : "items-start"}`}>
+                            <Button variant="ghost" size="icon" onClick={() => setReplyTo(msg)} className="h-7 w-7 hover:text-primary"><Send className="w-3.5 h-3.5 -rotate-90" /></Button>
+                            {msg.sender_id === user?.id && (
+                              <Button variant="ghost" size="icon" onClick={() => deleteMessage(msg.id)} className="h-7 w-7 hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+                            )}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary"><Smile className="w-3.5 h-3.5" /></Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-1 flex gap-1 rounded-full border-white/5 bg-background/90 backdrop-blur-md shadow-2xl">
+                                {COMMON_EMOJIS.map(emoji => (
+                                  <button key={emoji} onClick={() => toggleReaction(msg.id, emoji)} className="hover:scale-125 transition-transform p-1.5 text-lg">{emoji}</button>
+                                ))}
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                         </div>
                       
                       {renderReactions(msg)}
