@@ -25,18 +25,69 @@ import {
   ArrowLeftRight,
   ClipboardCheck,
   History,
+  Hammer,
+  Loader2,
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+import { useState, useEffect } from "react";
 
 export function AppSidebar() {
   const { profile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMaintenanceActive, setIsMaintenanceActive] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const role = profile?.role || "student";
+
+  useEffect(() => {
+    const fetchMaintenanceStatus = async () => {
+      const { data } = await supabase
+        .from("system_settings" as any)
+        .select("value")
+        .eq("key", "maintenance_mode")
+        .maybeSingle();
+      if (data) {
+        setIsMaintenanceActive((data as any).value.active);
+      }
+    };
+    fetchMaintenanceStatus();
+  }, []);
+
+  const toggleMaintenance = async () => {
+    if (profile?.role !== "admin" && profile?.role !== "developer") return;
+    
+    setIsUpdating(true);
+    try {
+      const { data: current } = await supabase
+        .from("system_settings" as any)
+        .select("value")
+        .eq("key", "maintenance_mode")
+        .maybeSingle();
+
+      const newValue = { 
+        ...((current as any)?.value || {}), 
+        active: !isMaintenanceActive 
+      };
+
+      const { error } = await supabase
+        .from("system_settings" as any)
+        .update({ value: newValue })
+        .eq("key", "maintenance_mode");
+
+      if (!error) {
+        setIsMaintenanceActive(!isMaintenanceActive);
+        toast.success(!isMaintenanceActive ? "Bakım modu aktif edildi!" : "Bakım modu kapatıldı!");
+      }
+    } catch (e) {
+      toast.error("Hata oluştu");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -130,6 +181,38 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-6">
+        {/* Maintenance Toggle for Admin/Dev */}
+        {(role === "admin" || role === "developer") && (
+          <div className="px-2 mb-4">
+            <button
+              onClick={toggleMaintenance}
+              disabled={isUpdating}
+              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-500 overflow-hidden relative group border ${
+                isMaintenanceActive 
+                  ? "bg-amber-500/10 text-amber-500 border-amber-500/20" 
+                  : "bg-white/5 text-muted-foreground/60 hover:bg-white/10 hover:text-foreground border-white/5"
+              }`}
+            >
+              <div className={`p-2 rounded-xl transition-colors ${isMaintenanceActive ? "bg-amber-500 text-white shadow-lg shadow-amber-500/20" : "bg-white/5"}`}>
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />}
+              </div>
+              <div className="flex flex-col items-start min-w-0">
+                <span className="text-[9px] font-black uppercase tracking-widest leading-none mb-1">
+                  Bakım Modu
+                </span>
+                <span className="text-[8px] font-bold opacity-60 uppercase tracking-tighter">
+                  {isMaintenanceActive ? "SİSTEM KAPALI" : "SİSTEM AÇIK"}
+                </span>
+              </div>
+              {isMaintenanceActive && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                </div>
+              )}
+            </button>
+          </div>
+        )}
+
         <div className="glass-premium p-4 border-white/5 shadow-2xl relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-700" />
           <div className="flex items-center gap-3 mb-4">
