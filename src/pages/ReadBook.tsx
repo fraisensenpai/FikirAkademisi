@@ -62,6 +62,7 @@ export default function ReadBook() {
   const lastActivityRef = useRef(Date.now()); // useRef: interval'i yeniden başlatmaz
   const IDLE_THRESHOLD = 300000; // 5 dakika hareketsizlik limiti
   const MIN_READ_TIME_PER_PAGE = 20; // Bir sayfa için minimum 20 saniye
+  const isWaitExempt = currentPage <= 10 || (numPages !== null && currentPage > numPages - 10);
 
   const filteredParticipants = profiles.filter(p =>
     p.full_name.toLowerCase().includes(userSearch.toLowerCase())
@@ -217,8 +218,8 @@ export default function ReadBook() {
     const isActuallyLastPage = numPages ? currentPage >= numPages : false;
     const targetPage = isActuallyLastPage ? (numPages || book.total_pages) : currentPage + 1;
 
-    // SERT HİLE ENGELİ: Minimum süre dolmadan kesinlikle geçirilmez
-    if (activeSeconds < MIN_READ_TIME_PER_PAGE) {
+    // SERT HİLE ENGELİ: Minimum süre dolmadan kesinlikle geçirilmez (İlk ve son 10 sayfa hariç)
+    if (!isWaitExempt && activeSeconds < MIN_READ_TIME_PER_PAGE) {
       const remaining = MIN_READ_TIME_PER_PAGE - activeSeconds;
       toast.error(`Sayfayı henüz geçemezsiniz! 🛡️`, {
         description: `Sonraki sayfaya geçmek için ${remaining} saniye daha aktif okumanız gerekiyor.`,
@@ -510,7 +511,7 @@ export default function ReadBook() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
 
-                {activeSeconds < MIN_READ_TIME_PER_PAGE ? (
+                {!isWaitExempt && activeSeconds < MIN_READ_TIME_PER_PAGE ? (
                   <Button
                     onClick={handleNextPage}
                     size="lg"
