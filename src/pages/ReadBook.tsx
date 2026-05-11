@@ -56,6 +56,9 @@ export default function ReadBook() {
   const [hasReviewed, setHasReviewed] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pageWidth, setPageWidth] = useState(800);
+
   // Anti-Cheat Variables
   const [activeSeconds, setActiveSeconds] = useState(0);
   const [isIdle, setIsIdle] = useState(false);
@@ -161,15 +164,20 @@ export default function ReadBook() {
     }
   }, [bookId, user]);
 
-  const [pageWidth, setPageWidth] = useState(window.innerWidth > 768 ? 800 : window.innerWidth - 32);
-
   useEffect(() => {
     const handleResize = () => {
-      setPageWidth(window.innerWidth > 768 ? 800 : window.innerWidth - 32);
+      if (containerRef.current) {
+        // Ekran genişliğine göre 800px max veya konteyner genişliği
+        const width = Math.min(800, containerRef.current.clientWidth);
+        setPageWidth(width);
+      }
     };
+    
+    // İlk yüklemede ve pencere boyutlandığında tetikle
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [loading]); // loading bitince container DOM'da olur
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -342,7 +350,10 @@ export default function ReadBook() {
       </div>
 
       {/* Main Content: The PDF */}
-      <div className="flex-1 flex flex-col items-center p-4 md:p-8 overflow-y-auto custom-scrollbar pt-20 pb-32">
+      <div 
+        ref={containerRef}
+        className="flex-1 flex flex-col items-center px-1 md:px-8 overflow-y-auto overflow-x-hidden custom-scrollbar pt-20 pb-32"
+      >
         {/* Mobile Status Indicator */}
         {isIdle && (
           <div className="md:hidden mb-4 flex items-center gap-2 px-3 py-2 bg-amber-500/20 border border-amber-500/30 rounded-xl w-full justify-center animate-pulse">
